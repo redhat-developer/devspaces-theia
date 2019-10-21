@@ -173,6 +173,9 @@ handle_che_theia() {
   # Copy generate Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+
+  # Copy loader patch
+  cp ${base_dir}/conf/theia/loader/* "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
