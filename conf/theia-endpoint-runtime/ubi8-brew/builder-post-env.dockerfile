@@ -6,9 +6,6 @@ RUN tar xzf /tmp/asset-theia-endpoint-runtime-yarn.tar.gz -C / && rm -f /tmp/ass
 COPY asset-workspace-yarn.lock /home/workspace/yarn.lock
 COPY asset-theia-remote-yarn.lock /home/workspace/packages/theia-remote/yarn.lock
 
-# Grab dependencies
-COPY /docker-build/theia-plugin-remote/package.json /home/workspace/packages/theia-remote/
-
 COPY asset-moxios.tgz /tmp/
 RUN mkdir -p /tmp/moxios && tar xzf /tmp/asset-moxios.tgz -C /tmp/moxios && rm -f /tmp/asset-moxios.tgz
 COPY asset-node-headers.tar.gz ${HOME}/asset-node-headers.tar.gz
