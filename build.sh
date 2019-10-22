@@ -57,9 +57,9 @@ handle_che_theia_dev() {
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run
-  docker build -f .Dockerfile -t "${TMP_BUILDER_IMAGE}" .
+  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" .
   # For use in default
-  docker tag "${TMP_BUILDER_IMAGE}" eclipse/che-theia-dev:next
+  docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -226,7 +226,7 @@ handle_che_theia_endpoint_runtime() {
   # moxios is used with a github URL, not a npmjs dependency, need to provide the dependency
   git clone https://github.com/stoplightio/moxios.git "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/moxios >/dev/null
-  tar zcf "${BREW_DOCKERFILE_ROOT_DIR}/theia/asset-moxios.tgz" -- *
+  tar zcf "${BREW_DOCKERFILE_ROOT_DIR}/theia-endpoint-runtime/asset-moxios.tgz" -- *
   rm -rf "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
   popd >/dev/null
 
