@@ -1,9 +1,13 @@
+#Copy branding files
+COPY branding ${HOME}/branding
+
 ENV YARN_FLAGS="--offline"
 
 ENV SUMMARY="Red Hat CodeReady Workspaces - Theia container" \
     DESCRIPTION="Red Hat CodeReady Workspaces - Theia container" \
     PRODNAME="codeready-workspaces" \
-    COMPNAME="theia-rhel8" 
+    COMPNAME="theia-rhel8" \
+    PRODUCT_JSON=${HOME}/branding/product.json
 
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
