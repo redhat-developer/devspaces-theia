@@ -111,7 +111,7 @@ handle_che_theia_dev() {
 
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run
+  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
   docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS}
   # For use in default
   docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
@@ -125,7 +125,7 @@ handle_che_theia_dev() {
   
   # dry-run for theia-dev:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run
+  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
   
   # Copy assets from ubi8 to local
@@ -167,7 +167,7 @@ handle_che_theia() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false,DO_CLEANUP=false --tag:next --branch:${THEIA_BRANCH} --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false --tag:next --branch:${THEIA_BRANCH} --target:builder
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS}
@@ -183,7 +183,7 @@ handle_che_theia() {
   
   # dry-run for theia:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false --tag:next --branch:${THEIA_BRANCH} --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false --tag:next --branch:${THEIA_BRANCH} --target:builder
   popd >/dev/null
   
   # Copy assets from ubi8 to local
@@ -262,7 +262,7 @@ handle_che_theia_endpoint_runtime() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false --tag:next --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false --tag:next --target:builder
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
@@ -277,7 +277,7 @@ handle_che_theia_endpoint_runtime() {
   
   # dry-run for theia-endpoint-runtime:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false --tag:next --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false --tag:next --target:builder
   popd >/dev/null
   
   # Copy assets from ubi8 to local
@@ -341,7 +341,7 @@ handle_che_theia_endpoint_runtime_binary() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false --tag:next --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false --tag:next --target:builder
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
@@ -357,7 +357,7 @@ handle_che_theia_endpoint_runtime_binary() {
 
   # dry-run for theia-endpoint-runtime:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false --tag:next --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false --tag:next --target:builder
   popd >/dev/null
   
   # Copy assets from ubi8 to local
