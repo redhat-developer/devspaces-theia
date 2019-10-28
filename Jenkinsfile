@@ -76,7 +76,7 @@ timeout(120) {
 		df -h  ${WORKSPACE} /tmp / /home/hudson/static_build_env /qa/tools
 		'''
 
-		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties
+		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
 		sh '''#!/bin/bash -xe 
 		for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
 		'''
@@ -95,8 +95,7 @@ timeout(120) {
 		df -h  ${WORKSPACE} /tmp / /home/hudson/static_build_env /qa/tools
 		'''
 		// TODO verify this works & is archived correctly
-		archiveArtifacts fingerprint: true, artifacts: "${WORKSPACE}/crw-theia/dockerfiles/*, \
-			${WORKSPACE}/logs/*"
+		archiveArtifacts fingerprint: true, artifacts: "crw-theia/dockerfiles/*, logs/*"
 		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: ${che_theia_version}, ${che_theia_tag}, ${che_theia_branch}"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
