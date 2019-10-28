@@ -12,16 +12,60 @@
 set -e
 set -u
 
+usage () {
+	echo "
+Usage: 
+  $0 -d      | build theia-dev
+  $0 -t      | build (or rebuild) theia. Note: if theia-dev not already built, must add -d flag too
+  $0 -r      | build (or rebuild) theia-endpoint-runtime. Note: if theia-dev not already built, must add -d flag too
+  $0 -b      | build (or rebuild) theia-endpoint-runtime-binary. Note: if theia-dev not already built, must add -d flag too
+  $0 --all   | build 4 projects: theia-dev, theia, theia-endpoint-runtime,  theia-endpoint-runtime-binary
+
+Note that steps are run in the order specified, so always start with -d if needed.
+
+Additional flags:
+
+  --squash   | if running docker in experimental mode, squash images
+  --no-cache | do not use docker cache
+
+Cleanup options:
+
+  --rmi:all | delete all generated images when done
+  --rmi:tmp | delete only images with :tmp tag when done
+"
+	exit
+}
+if [[ $# -lt 1 ]]; then usage; fi
+
+STEPS=""
+DELETE_TMP_IMAGES=0
+DELETE_ALL_IMAGES=0
+DOCKERFLAGS="" # eg., --no-cache --squash
+
+for key in "$@"; do
+  case $key in 
+      '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
+      '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
+      '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;;
+      '-b') STEPS="${STEPS} handle_che_theia_endpoint_runtime_binary"; shift 1;;
+      '--all') STEPS="handle_che_theia_dev handle_che_theia handle_che_theia_endpoint_runtime handle_che_theia_endpoint_runtime_binary"; shift 1;;
+      '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
+      '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
+      '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
+      '--rmi:all') DELETE_ALL_IMAGES=1; shift 1;;
+  esac
+done
+
 # conf
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
 
 #need to edit conf/theia/ubi8-brew/builder-from.dockerfile file as well for now
 #need to edit conf/theia-endpoint-runtime/ubi8-brew/builder-from.dockerfile file as well for now
-CHE_THEIA_DEV_IMAGE_NAME="quay.io/crw/theia-dev-rhel8:next"
-CHE_THEIA_IMAGE_NAME="quay.io/crw/theia-rhel8:next"
-CHE_THEIA_ENDPOINT_IMAGE_NAME="quay.io/crw/theia-endpoint-rhel8:next"
-CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/crw/theia-endpoint-binary-rhel8:next"
+CHE_THEIA_DEV_IMAGE_NAME="quay.io/crw/theia-dev-rhel8:2.0"
+CHE_THEIA_IMAGE_NAME="quay.io/crw/theia-rhel8:2.0"
+CHE_THEIA_ENDPOINT_IMAGE_NAME="quay.io/crw/theia-endpoint-rhel8:2.0"
+CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/crw/theia-endpoint-binary-rhel8:2.0"
 
 base_dir=$(cd "$(dirname "$0")"; pwd)
 
@@ -34,7 +78,6 @@ TMP_THEIA_BUILDER_IMAGE="che-theia-builder:tmp"
 TMP_THEIA_RUNTIME_IMAGE="che-theia-runtime:tmp"
 TMP_THEIA_ENDPOINT_BUILDER_IMAGE="che-theia-endpoint-builder:tmp"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
-
 
 if [ ! -d "${TMP_DIR}" ]; then
   rm -rf "${TMP_DIR}"
@@ -53,11 +96,13 @@ mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
 DOCKERFILES_ROOT_DIR=${TMP_DIR}/che-theia/dockerfiles
 
 handle_che_theia_dev() {
+  cd ${base_dir}
+  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
 
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run
-  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" .
+  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS}
   # For use in default
   docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
   popd >/dev/null
@@ -97,12 +142,14 @@ handle_che_theia_dev() {
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} .
+  docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS}
   popd >/dev/null
 }
 
 # now do che-theia
 handle_che_theia() {
+  cd ${base_dir}
+  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
@@ -110,9 +157,9 @@ handle_che_theia() {
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:DO_REMOTE_CHECK=false,DO_CLEANUP=false --tag:next --branch:${THEIA_BRANCH} --target:builder
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder .
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS}
   # and create runtime image as well
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} .
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS}
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -179,12 +226,14 @@ handle_che_theia() {
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  docker build -t ${CHE_THEIA_IMAGE_NAME} .
+  docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS}
   popd >/dev/null
 }
 
 # now do che-theia-endpoint-runtime
 handle_che_theia_endpoint_runtime() {
+  cd ${base_dir}
+  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime
 
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
@@ -193,7 +242,7 @@ handle_che_theia_endpoint_runtime() {
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --target builder .
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS}
   popd >/dev/null
   
   # Create image theia-endpoint-runtime:ubi8-brew
@@ -248,12 +297,14 @@ handle_che_theia_endpoint_runtime() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime/Dockerfile
   
   # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_IMAGE_NAME} .
+  docker build -t ${CHE_THEIA_ENDPOINT_IMAGE_NAME} . ${DOCKERFLAGS}
   popd >/dev/null
 }
 
 # now do che-theia-endpoint-runtime-binary
 handle_che_theia_endpoint_runtime_binary() {
+  cd ${base_dir}
+  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
 
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
@@ -262,7 +313,7 @@ handle_che_theia_endpoint_runtime_binary() {
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder .
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS}
   popd >/dev/null
 
   # Create image theia-endpoint-runtime-binary:ubi8-brew
@@ -293,17 +344,27 @@ handle_che_theia_endpoint_runtime_binary() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
   
   # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} .
+  docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS}
   popd >/dev/null
 }
 
-mkdir -p dockerfiles/theia
-mkdir -p dockerfiles/theia-dev
-mkdir -p dockerfiles/theia-endpoint
-mkdir -p dockerfiles/theia-endpoint-runtime
-mkdir -p dockerfiles/theia-endpoint-runtime-binary
+for step in $STEPS; do
+  $step
+done
 
-handle_che_theia_dev
-handle_che_theia
-handle_che_theia_endpoint_runtime
-handle_che_theia_endpoint_runtime_binary
+# optional cleanup of generated images
+if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+  echo;echo "Delete temp images from docker registry"
+  docker rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE
+fi
+if [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+  echo;echo "Delete che-theia images from docker registry"
+  docker rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME
+fi
+
+echo; echo "Dockerfiles and tarballs generated. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
+for step in $STEPS; do
+  output_dir=${step//_/-};output_dir=${output_dir/handle-che-/}
+  echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
+done
+echo
