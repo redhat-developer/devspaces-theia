@@ -382,6 +382,10 @@ handle_che_theia_endpoint_runtime_binary() {
 }
 
 for step in $STEPS; do
+  echo 
+  echo "=========================================================="
+  echo "====== $step"
+  echo "=========================================================="
   $step
 done
 
