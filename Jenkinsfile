@@ -95,7 +95,9 @@ timeout(120) {
 		'''
 		// TODO verify this works & is archived correctly
 		archiveArtifacts fingerprint: true, artifacts: "crw-theia/dockerfiles/*, logs/*"
-		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: ${che_theia_version}, ${che_theia_tag}, ${che_theia_branch}"
+
+		// TODO start collecting shas with "git rev-parse --short=4 HEAD"
+		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
 	}
