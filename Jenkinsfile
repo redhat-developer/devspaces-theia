@@ -2,11 +2,8 @@
 
 // PARAMETERS for this pipeline:
 // branchToBuildCRW = codeready-workspaces branch to build: */2.0.x or */master
-// branchToBuildCheTheia = che-theia branch to build: refs/tags/7.0.0, */7.2.0, or */master
-// che_theia_version = 7.2.0 or master
-// che_theia_tag = 7.2.0 or next
-// che_theia_branch = 7.2.0 or master
-// che_theia_gitref = refs/heads/7.2.0 or refs/heads/master
+// THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.11.0
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.3.1, 7.3.0
 // node == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram||rhel7-devstudio-releng||rhel7 or rhel7-32gb||rhel7-16gb||rhel7-8gb
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
@@ -85,11 +82,11 @@ timeout(120) {
 		'''
 
 		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--all --squash --no-cache --rmi:all"
+		def BUILD_PARAMS="--ctb ${THEIA_BRANCH} --tb ${CHE_THEIA_BRANCH} --all --squash --no-cache --rmi:all"
 		sh '''#!/bin/bash -xe
 		mkdir -p ${WORKSPACE}/logs/
 		pushd ${WORKSPACE}/crw-theia >/dev/null
-			./build.sh ${BUILD_PARAMS} | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
+			./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 		popd >/dev/null
 		'''
 

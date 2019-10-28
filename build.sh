@@ -14,7 +14,15 @@ set -u
 
 usage () {
 	echo "
+Example:
+  $0 --ctb 7.3.0 --tb v0.11.0 --all --no-cache --rmi:all --squash
+  $0 --ctb 7.3.1 --tb 8814c20 --all --no-cache --rmi:tmp
+  $0 --ctb master --tb master --all 
+
 Usage: 
+  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
+
+Options: 
   $0 -d      | build theia-dev
   $0 -t      | build (or rebuild) theia. Note: if theia-dev not already built, must add -d flag too
   $0 -r      | build (or rebuild) theia-endpoint-runtime. Note: if theia-dev not already built, must add -d flag too
@@ -42,8 +50,13 @@ DELETE_TMP_IMAGES=0
 DELETE_ALL_IMAGES=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 
+CHE_THEIA_BRANCH="master"
+THEIA_BRANCH="master"
+
 for key in "$@"; do
   case $key in 
+      '--ctb') CHE_THEIA_BRANCH="$2"; shift 2;;
+      '--tb') THEIA_BRANCH="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
       '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;;
@@ -56,16 +69,12 @@ for key in "$@"; do
   esac
 done
 
-# conf
-CHE_THEIA_BRANCH="master"
-THEIA_BRANCH="master"
-
 #need to edit conf/theia/ubi8-brew/builder-from.dockerfile file as well for now
 #need to edit conf/theia-endpoint-runtime/ubi8-brew/builder-from.dockerfile file as well for now
-CHE_THEIA_DEV_IMAGE_NAME="quay.io/crw/theia-dev-rhel8:2.0"
-CHE_THEIA_IMAGE_NAME="quay.io/crw/theia-rhel8:2.0"
-CHE_THEIA_ENDPOINT_IMAGE_NAME="quay.io/crw/theia-endpoint-rhel8:2.0"
-CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/crw/theia-endpoint-binary-rhel8:2.0"
+CHE_THEIA_DEV_IMAGE_NAME="quay.io/crw/theia-dev-rhel8:next"
+CHE_THEIA_IMAGE_NAME="quay.io/crw/theia-rhel8:next"
+CHE_THEIA_ENDPOINT_IMAGE_NAME="quay.io/crw/theia-endpoint-rhel8:next"
+CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/crw/theia-endpoint-binary-rhel8:next"
 
 base_dir=$(cd "$(dirname "$0")"; pwd)
 
