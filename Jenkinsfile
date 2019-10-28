@@ -49,7 +49,7 @@ npm --version; yarn --version
 }
 
 timeout(120) {
-	node("${node}"){ stage "Build Theia"
+	node("${node}"){ stage "Build CRW Theia"
 		cleanWs()
 		// for private repo, use checkout(credentialsId: 'devstudio-release')
 		checkout([$class: 'GitSCM', 
