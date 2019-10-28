@@ -60,8 +60,6 @@ timeout(120) {
 			submoduleCfg: [], 
 			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
 		installNPM()
-		sh "export GITHUB_TOKEN=${GITHUB_TOKEN}"
-		// sh 'printenv | sort'
 
 		// CRW-360 use RH NPM mirror
 		// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
@@ -84,6 +82,7 @@ timeout(120) {
 		// TODO pass che-theia and theia tags/branches to this script
 		def BUILD_PARAMS="--ctb ${THEIA_BRANCH} --tb ${CHE_THEIA_BRANCH} --all --squash --no-cache --rmi:all"
 		sh '''#!/bin/bash -xe
+		export GITHUB_TOKEN="''' + ${GITHUB_TOKEN} + '''"
 		mkdir -p ${WORKSPACE}/logs/
 		pushd ${WORKSPACE}/crw-theia >/dev/null
 			./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
