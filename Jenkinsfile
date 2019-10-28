@@ -117,13 +117,13 @@ ok /Couldn't create directory: Failure/
 start /====== handle_.+/
 
 # warnings
-warning /.+\[WARNING\].+/
+warning /.+\\[WARNING\\].+/
 warning /[Ww]arning/
 warning /WARNING/
 warning /Connection refused/
 
 # errors
-error / \[ERROR\] /
+error / \\[ERROR\\] /
 error /exec returned: .+/
 error /non-zero code/
 error /ripgrep: Command failed/
