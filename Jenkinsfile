@@ -107,6 +107,35 @@ timeout(120) {
 		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
+
+	    writeFile(file: 'project.rules', text:
+'''
+# warnings/errors to ignore
+ok /Couldn't create directory: Failure/
+
+# section starts: these are used to group errors and warnings found after the line; also creates a quick access link.
+start /====== handle_.+/
+
+# warnings
+warning /.+\[WARNING\].+/
+warning /[Ww]arning/
+warning /WARNING/
+warning /Connection refused/
+
+# errors
+error / \[ERROR\] /
+error /exec returned: .+/
+error /non-zero code/
+error /ripgrep: Command failed/
+error /The following error occurred/
+
+# match line starting with 'error ', case-insensitive
+error /(?i)^error /
+''')
+    step([$class: 'LogParserPublisher',
+        failBuildOnError: true,
+        projectRulePath: 'project.rules',
+        useProjectRule: true])
 	}
 }
 
