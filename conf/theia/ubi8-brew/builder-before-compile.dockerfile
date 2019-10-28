@@ -1,3 +1,7 @@
+# globally install node-gyp ahead of time. Note: theia depends on ^5.0 and ^3.8 but might install ^6.0
+RUN yarn global add node-gyp && node-gyp install && \
+    sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
+
 COPY asset-yarn.tar.gz asset-post-download-dependencies.tar.gz asset-moxios.tgz /tmp/
 RUN tar xzf /tmp/asset-yarn.tar.gz -C / && rm -f /tmp/asset-yarn.tar.gz && \
     tar xzf /tmp/asset-post-download-dependencies.tar.gz -C / && rm -f /tmp/asset-post-download-dependencies.tar.gz && \
