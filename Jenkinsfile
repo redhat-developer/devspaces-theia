@@ -128,6 +128,8 @@ error /exec returned: .+/
 error /non-zero code/
 error /ripgrep: Command failed/
 error /The following error occurred/
+error /Downloading ripgrep failed/
+error /API rate limit exceeded/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
