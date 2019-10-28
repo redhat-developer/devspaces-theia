@@ -96,6 +96,7 @@ if [ ! -d "${TMP_DIR}" ]; then
   
   # init yarn in che-theia
   pushd "${CHE_THEIA_DIR}" >/dev/null
+  CHE_THEIA_SHA=$(git rev-parse --short=4 HEAD); echo "CHE_THEIA_SHA=${CHE_THEIA_SHA}"
   yarn
   popd >/dev/null
   

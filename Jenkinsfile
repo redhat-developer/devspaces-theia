@@ -94,7 +94,14 @@ timeout(120) {
 		df -h  ${WORKSPACE} /tmp / /home/hudson/static_build_env /qa/tools
 		'''
 		// TODO verify this works & is archived correctly
-		archiveArtifacts fingerprint: true, artifacts: "crw-theia/dockerfiles/*, logs/*"
+		archiveArtifacts fingerprint: true, artifacts: "\
+			crw-theia/dockerfiles/**/*, \
+			crw-theia/dockerfiles/**/**/*, \
+			crw-theia/dockerfiles/**/**/**/*, \
+			crw-theia/dockerfiles/**/**/**/**/*, \
+			crw-theia/dockerfiles/**/**/**/**/**/*, \
+			crw-theia/dockerfiles/**/**/**/**/**/**/*, \
+			logs/*"
 
 		// TODO start collecting shas with "git rev-parse --short=4 HEAD"
 		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
