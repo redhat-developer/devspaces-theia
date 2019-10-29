@@ -202,14 +202,10 @@ handle_che_theia() {
     /opt/app-root/src/.npm-global > asset-yarn.tar.gz
   
   # post-install dependencies
-  # /home/theia-dev/theia-source-code/packages/java/download = jdt ls binary
   # /home/theia-dev/theia-source-code/packages/debug-nodejs/download = node debug vscode binary
-  # /home/theia-dev/theia-source-code/packages/java-debug/download = java debug vscode binary
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
   docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} tar -pzcf - \
-    /home/theia-dev/theia-source-code/packages/java/download \
-    /home/theia-dev/theia-source-code/packages/java-debug/download \
     /home/theia-dev/theia-source-code/packages/debug-nodejs/download  \
     /tmp/vscode-ripgrep-cache-1.2.4 \
     /tmp/vscode-ripgrep-cache-1.5.7 \
@@ -218,13 +214,6 @@ handle_che_theia() {
   # node-headers
   docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
   
-  # moxios is used with a github URL, not a npmjs dependency, need to provide the dependency
-  git clone https://github.com/stoplightio/moxios.git "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
-  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/moxios >/dev/null
-  tar zcf "${BREW_DOCKERFILE_ROOT_DIR}/theia/asset-moxios.tgz" -- *
-  rm -rf "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
-  popd >/dev/null
-
   # Add yarn.lock after compilation
   docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} sh -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
 
@@ -298,13 +287,6 @@ handle_che_theia_endpoint_runtime() {
   # Add yarn.lock after compilation
   docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} sh -c 'cat /home/workspace/yarn.lock' > asset-workspace-yarn.lock
   docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} sh -c 'cat /home/workspace/packages/theia-remote/yarn.lock' > asset-theia-remote-yarn.lock
-
-  # moxios is used with a github URL, not a npmjs dependency, need to provide the dependency
-  git clone https://github.com/stoplightio/moxios.git "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
-  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/moxios >/dev/null
-  tar zcf "${BREW_DOCKERFILE_ROOT_DIR}/theia-endpoint-runtime/asset-moxios.tgz" -- *
-  rm -rf "${BREW_DOCKERFILE_ROOT_DIR}"/moxios
-  popd >/dev/null
 
   # post-install dependencies
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
