@@ -373,7 +373,7 @@ for step in $STEPS; do
 done
 
 # optional cleanup of generated images
-if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from docker registry"
   docker rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE
 fi
