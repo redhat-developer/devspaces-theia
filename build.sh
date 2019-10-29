@@ -27,7 +27,7 @@ Options:
   $0 -t      | build (or rebuild) theia. Note: if theia-dev not already built, must add -d flag too
   $0 -r      | build (or rebuild) theia-endpoint-runtime. Note: if theia-dev not already built, must add -d flag too
   $0 -b      | build (or rebuild) theia-endpoint-runtime-binary. Note: if theia-dev not already built, must add -d flag too
-  $0 --all   | build 4 projects: theia-dev, theia, theia-endpoint-runtime,  theia-endpoint-runtime-binary
+  $0 --all   | build 3 projects: theia-dev, theia, theia-endpoint-runtime-binary
 
 Note that steps are run in the order specified, so always start with -d if needed.
 
@@ -59,9 +59,9 @@ for key in "$@"; do
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
-      '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;;
+      '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;; # not needed anymore
       '-b') STEPS="${STEPS} handle_che_theia_endpoint_runtime_binary"; shift 1;;
-      '--all') STEPS="handle_che_theia_dev handle_che_theia handle_che_theia_endpoint_runtime handle_che_theia_endpoint_runtime_binary"; shift 1;;
+      '--all') STEPS="handle_che_theia_dev handle_che_theia handle_che_theia_endpoint_runtime_binary"; shift 1;;
       '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
