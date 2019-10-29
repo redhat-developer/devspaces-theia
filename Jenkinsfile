@@ -69,30 +69,23 @@ timeout(120) {
 		// 	'''
 		// }
 
-		// check available disk space -- might need to do some cleanup if this slave is getting full
-		sh '''#!/bin/bash -xe 
-		df -h  ${WORKSPACE} /tmp / /home/hudson/static_build_env /qa/tools
-		'''
-
 		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
-		sh '''#!/bin/bash -xe 
-		for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
-		'''
+		// sh '''#!/bin/bash -xe 
+		// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
+		// '''
 
 		// TODO pass che-theia and theia tags/branches to this script
 		def BUILD_PARAMS="--ctb ${THEIA_BRANCH} --tb ${CHE_THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all"
-		sh '''#!/bin/bash -xe
-		export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
-		mkdir -p ${WORKSPACE}/logs/
-		pushd ${WORKSPACE}/crw-theia >/dev/null
-			./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
-		popd >/dev/null
-		'''
+		ansiColor('xterm') {
+			sh '''#!/bin/bash -xe
+export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
+mkdir -p ${WORKSPACE}/logs/
+pushd ${WORKSPACE}/crw-theia >/dev/null
+	./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
+popd >/dev/null
+'''
+		}
 
-		// check available disk space -- might need to do some cleanup if this slave is getting full
-		sh '''#!/bin/bash -xe 
-		df -h  ${WORKSPACE} /tmp / /home/hudson/static_build_env /qa/tools
-		'''
 		// TODO verify this works & is archived correctly
 		archiveArtifacts fingerprint: true, artifacts: "\
 			crw-theia/dockerfiles/**/*, \
