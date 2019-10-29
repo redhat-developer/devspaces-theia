@@ -14,13 +14,19 @@ set -u
 
 usage () {
 	echo "
+
+You must export a GITHUB_TOKEN to your shell before running this script, or you will be rate-limited by github.
+
+See https://github.com/settings/tokens for more information.
+
+Usage:
+  export GITHUB_TOKEN=*your token here*
+  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
+
 Example:
   $0 --ctb 7.3.0 --tb v0.11.0 --all --no-cache --rmi:all --squash
   $0 --ctb 7.3.1 --tb 8814c20 --all --no-cache --rmi:tmp
   $0 --ctb master --tb master --all 
-
-Usage: 
-  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
 
 Options: 
   $0 -d      | build theia-dev
@@ -43,7 +49,7 @@ Cleanup options:
 "
 	exit
 }
-if [[ $# -lt 1 ]]; then usage; fi
+if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 
 STEPS=""
 DELETE_TMP_IMAGES=0
