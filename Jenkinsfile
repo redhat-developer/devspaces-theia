@@ -80,7 +80,7 @@ timeout(120) {
 		'''
 
 		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--ctb ${THEIA_BRANCH} --tb ${CHE_THEIA_BRANCH} -r -t -b --squash --no-cache --rmi:all"
+		def BUILD_PARAMS="--ctb ${THEIA_BRANCH} --tb ${CHE_THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all"
 		sh '''#!/bin/bash -xe
 		export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 		mkdir -p ${WORKSPACE}/logs/
@@ -130,6 +130,8 @@ error /ripgrep: Command failed/
 error /The following error occurred/
 error /Downloading ripgrep failed/
 error /API rate limit exceeded/
+error /error exit delayed from previous errors/
+error /tar: .+: No such file or directory/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
