@@ -7,6 +7,7 @@
 // node == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram||rhel7-devstudio-releng||rhel7 or rhel7-32gb||rhel7-16gb||rhel7-8gb
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
+// SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def installNPM(){
 	def nodeHome = tool 'nodejs-10.15.3'
@@ -136,49 +137,49 @@ error /(?i)^error /
 	}
 }
 
-// TODO enable downstream image builds
-// timeout(120) {
-// 	node("${node}"){ stage "Run get-sources-rhpkg-container-build"
-// 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"server-rhel8"))
+timeout(120) {
+	node("${node}"){ stage "rhpkg container-build: theia-dev, theia, theia-endpoint"
+		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8 theia-rhel8 theia-endpoint-rhel8"))
 
-// 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-// 		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "stable-branch")
+		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
-// 		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
-// 		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
-// 		// trigger OSBS build
-// 		build(
-// 		  job: 'get-sources-rhpkg-container-build',
-// 		  wait: false,
-// 		  propagate: false,
-// 		  parameters: [
-// 			[
-// 			  $class: 'StringParameterValue',
-// 			  name: 'GIT_PATH',
-// 			  value: "containers/codeready-workspaces",
-// 			],
-// 			[
-// 			  $class: 'StringParameterValue',
-// 			  name: 'GIT_BRANCH',
-// 			  value: "crw-2.0-rhel-8",
-// 			],
-// 			[
-// 			  $class: 'StringParameterValue',
-// 			  name: 'QUAY_REPO_PATHs',
-// 			  value: "${QUAY_REPO_PATHs}",
-// 			],
-// 			[
-// 			  $class: 'StringParameterValue',
-// 			  name: 'SCRATCH',
-// 			  value: "${SCRATCH}",
-// 			],
-// 			[
-// 			  $class: 'StringParameterValue',
-// 			  name: 'JOB_BRANCH',
-// 			  value: "${JOB_BRANCH}",
-// 			]
-// 		  ]
-// 		)
-// 	}
-// }
+		// trigger OSBS build
+		build(
+		  job: 'get-sources-rhpkg-container-build',
+		  wait: false,
+		  propagate: false,
+		  parameters: [
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_PATH',
+			  value: "containers/codeready-workspaces",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_BRANCH',
+			  value: "crw-2.0-rhel-8",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'QUAY_REPO_PATHs',
+			  value: "${QUAY_REPO_PATHs}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'SCRATCH',
+			  value: "${SCRATCH}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'JOB_BRANCH',
+			  value: "${JOB_BRANCH}",
+			]
+		  ]
+		)
+	}
+}
+
