@@ -137,9 +137,11 @@ error /(?i)^error /
 	}
 }
 
+
+
 timeout(120) {
-	node("${node}"){ stage "rhpkg container-build: theia-dev, theia, theia-endpoint"
-		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8 theia-rhel8 theia-endpoint-rhel8"))
+	node("${node}"){ stage "rhpkg container-build: theia-dev"
+		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
 		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
@@ -156,7 +158,7 @@ timeout(120) {
 			[
 			  $class: 'StringParameterValue',
 			  name: 'GIT_PATH',
-			  value: "containers/codeready-workspaces",
+			  value: "containers/codeready-workspaces-theia-dev",
 			],
 			[
 			  $class: 'StringParameterValue',
@@ -183,3 +185,94 @@ timeout(120) {
 	}
 }
 
+timeout(120) {
+	node("${node}"){ stage "rhpkg container-build: theia"
+		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
+
+		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+
+		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+
+		// trigger OSBS build
+		build(
+		  job: 'get-sources-rhpkg-container-build',
+		  wait: false,
+		  propagate: false,
+		  parameters: [
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_PATH',
+			  value: "containers/codeready-workspaces-theia",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_BRANCH',
+			  value: "crw-2.0-rhel-8",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'QUAY_REPO_PATHs',
+			  value: "${QUAY_REPO_PATHs}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'SCRATCH',
+			  value: "${SCRATCH}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'JOB_BRANCH',
+			  value: "${JOB_BRANCH}",
+			]
+		  ]
+		)
+	}
+}
+
+timeout(120) {
+	node("${node}"){ stage "rhpkg container-build: theia-endpoint"
+		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
+
+		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+
+		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+
+		// trigger OSBS build
+		build(
+		  job: 'get-sources-rhpkg-container-build',
+		  wait: false,
+		  propagate: false,
+		  parameters: [
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_PATH',
+			  value: "containers/codeready-workspaces-theia-endpoint",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'GIT_BRANCH',
+			  value: "crw-2.0-rhel-8",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'QUAY_REPO_PATHs',
+			  value: "${QUAY_REPO_PATHs}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'SCRATCH',
+			  value: "${SCRATCH}",
+			],
+			[
+			  $class: 'StringParameterValue',
+			  name: 'JOB_BRANCH',
+			  value: "${JOB_BRANCH}",
+			]
+		  ]
+		)
+	}
+}
