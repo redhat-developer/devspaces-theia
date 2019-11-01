@@ -249,7 +249,7 @@ timeout(120) {
 		  parameters: [
 			[
 			  $class: 'StringParameterValue',
-			  name: 'GIT_PATH',
+			  name: 'GIT_PATHs',
 			  value: "containers/codeready-workspaces-theia-endpoint",
 			],
 			[
