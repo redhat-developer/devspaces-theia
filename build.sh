@@ -11,6 +11,7 @@
 
 set -e
 set -u
+set -x
 
 usage () {
 	echo "
@@ -97,8 +98,12 @@ TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
 if [ ! -d "${TMP_DIR}" ]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
-  # Clone che-theia with sha-1/tag/whatever
-  git clone -b ${CHE_THEIA_BRANCH} --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+  if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; # if the branch includes an @SHA suffix, use that SHA from the branch
+    git clone -b ${CHE_THEIA_BRANCH%%@*} --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    pushd "${TMP_DIR}"/che-theia >/dev/null && git reset ${CHE_THEIA_BRANCH##*@} --hard && popd >/dev/null
+  else # clone from tag/branch
+    git clone -b ${CHE_THEIA_BRANCH} --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+  fi
   
   # init yarn in che-theia
   pushd "${CHE_THEIA_DIR}" >/dev/null
