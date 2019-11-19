@@ -126,6 +126,7 @@ error /Downloading ripgrep failed/
 error /API rate limit exceeded/
 error /error exit delayed from previous errors/
 error /tar: .+: No such file or directory/
+error /syntax error/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
@@ -136,8 +137,6 @@ error /(?i)^error /
         useProjectRule: true])
 	}
 }
-
-
 
 timeout(120) {
 	node("${node}"){ stage "rhpkg container-build: theia-dev"
