@@ -134,7 +134,7 @@ handle_che_theia_dev() {
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
-  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   # For use in default
   docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
   popd >/dev/null
@@ -177,7 +177,7 @@ handle_che_theia_dev() {
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 }
 
@@ -192,9 +192,9 @@ handle_che_theia() {
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false --tag:next --branch:${THEIA_BRANCH} --target:builder
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   # and create runtime image as well
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -261,7 +261,7 @@ handle_che_theia() {
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 }
 
@@ -277,7 +277,7 @@ handle_che_theia_endpoint_runtime() {
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
   
   # Create image theia-endpoint-runtime:ubi8-brew
@@ -333,7 +333,7 @@ handle_che_theia_endpoint_runtime() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime/Dockerfile
   
   # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_IMAGE_NAME} . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -t ${CHE_THEIA_ENDPOINT_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 }
 
@@ -349,7 +349,7 @@ handle_che_theia_endpoint_runtime_binary() {
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 
   # Create image theia-endpoint-runtime-binary:ubi8-brew
@@ -382,7 +382,7 @@ handle_che_theia_endpoint_runtime_binary() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
   
   # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 }
 
