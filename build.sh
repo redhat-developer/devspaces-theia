@@ -100,9 +100,20 @@ if [ ! -d "${TMP_DIR}" ]; then
   mkdir -p "${TMP_DIR}"
   if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; # if the branch includes an @SHA suffix, use that SHA from the branch
     git clone -b ${CHE_THEIA_BRANCH%%@*} --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
-    pushd "${TMP_DIR}"/che-theia >/dev/null && git reset ${CHE_THEIA_BRANCH##*@} --hard && popd >/dev/null
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo ERR"OR: could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH%%@*} !"; exit 1; fi 
+    pushd "${TMP_DIR}"/che-theia >/dev/null
+      git reset ${CHE_THEIA_BRANCH##*@} --hard
+      if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${CHE_THEIA_BRANCH##*@}" ]]; then 
+        echo ERR"OR: could not find SHA ${CHE_THEIA_BRANCH##*@} in branch ${CHE_THEIA_BRANCH%%@*} !"; 
+        echo "Latest 10 commits:"
+        git --no-pager log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %C(blue)%aE%Creset %Cgreen(%cr)%Creset' --abbrev-commit -10
+        echo
+        exit 1
+      fi
+    popd >/dev/null
   else # clone from tag/branch
     git clone -b ${CHE_THEIA_BRANCH} --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo ERR"OR: could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
   fi
   
   # init yarn in che-theia
