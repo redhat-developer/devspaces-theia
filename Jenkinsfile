@@ -111,6 +111,8 @@ timeout(120) {
 '''
 # warnings/errors to ignore
 ok /Couldn't create directory: Failure/
+ok /warning .+ The engine "theiaPlugin" appears to be invalid./
+ok /warning .+ The engine "vscode" appears to be invalid./
 
 # section starts: these are used to group errors and warnings found after the line; also creates a quick access link.
 start /====== handle_.+/
