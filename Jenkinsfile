@@ -50,7 +50,8 @@ npm --version; yarn --version
 }
 
 timeout(120) {
-	node("${node}"){ stage "Build CRW Theia"
+	node("${node}"){ 
+		stage "Build CRW Theia" {
 		cleanWs()
 		// for private repo, use checkout(credentialsId: 'devstudio-release')
 		checkout([$class: 'GitSCM', 
@@ -87,7 +88,6 @@ popd >/dev/null
 '''
 		}
 
-		// TODO verify this works & is archived correctly
 		archiveArtifacts fingerprint: true, artifacts: "\
 			crw-theia/dockerfiles/**/*, \
 			crw-theia/dockerfiles/**/**/*, \
@@ -101,8 +101,15 @@ popd >/dev/null
 		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
+		}
+	}
+}
 
-	    writeFile(file: 'project.rules', text:
+timeout(120) {
+	node("${node}"){ 
+		stage "Parse log" {
+
+	    	writeFile(file: 'project.rules', text:
 '''
 # warnings/errors to ignore
 ok /Couldn't create directory: Failure/
@@ -127,19 +134,29 @@ error /API rate limit exceeded/
 error /error exit delayed from previous errors/
 error /tar: .+: No such file or directory/
 error /syntax error/
+error /fatal: Remote branch/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
 ''')
-    step([$class: 'LogParserPublisher',
-        failBuildOnError: true,
-        projectRulePath: 'project.rules',
-        useProjectRule: true])
+			try {
+				step([$class: 'LogParserPublisher',
+				failBuildOnError: true,
+				unstableOnWarning: true,
+				projectRulePath: 'project.rules',
+				useProjectRule: true])
+			}
+			catch (all)
+			{
+				print "ERROR: LogParserPublisher failed: \n" +al
+			}
+		}
 	}
 }
 
 timeout(120) {
-	node("${node}"){ stage "rhpkg container-build: theia-dev"
+	node("${node}"){ 
+		stage "rhpkg container-build: theia-dev" {
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -181,11 +198,13 @@ timeout(120) {
 			]
 		  ]
 		)
+		}
 	}
 }
 
 timeout(120) {
-	node("${node}"){ stage "rhpkg container-build: theia"
+	node("${node}"){ 
+		stage "rhpkg container-build: theia" {
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
 
 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -227,11 +246,13 @@ timeout(120) {
 			]
 		  ]
 		)
+		}
 	}
 }
 
 timeout(120) {
-	node("${node}"){ stage "rhpkg container-build: theia-endpoint"
+	node("${node}"){ 
+		stage "rhpkg container-build: theia-endpoint" {
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
 
 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -273,5 +294,6 @@ timeout(120) {
 			]
 		  ]
 		)
+		}
 	}
 }
