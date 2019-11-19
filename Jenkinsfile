@@ -101,12 +101,7 @@ popd >/dev/null
 		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
-	}
-}
 
-timeout(120) {
-	node("${node}"){
-		stage "Parse log"
     	writeFile(file: 'project.rules', text:
 '''
 # warnings/errors to ignore
