@@ -88,7 +88,7 @@ popd >/dev/null
 '''
 		}
 
-		archiveArtifacts fingerprint: true, artifacts: "\
+		archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
 			crw-theia/dockerfiles/**/*, \
 			crw-theia/dockerfiles/**/**/*, \
 			crw-theia/dockerfiles/**/**/**/*, \
@@ -137,7 +137,7 @@ error /(?i)^error /
 		try {
 			step([$class: 'LogParserPublisher',
 			failBuildOnError: true,
-			unstableOnWarning: true,
+			unstableOnWarning: false,
 			projectRulePath: 'project.rules',
 			useProjectRule: true])
 		}
