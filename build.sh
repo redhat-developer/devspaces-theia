@@ -95,14 +95,14 @@ TMP_THEIA_RUNTIME_IMAGE="che-theia-runtime:tmp"
 TMP_THEIA_ENDPOINT_BUILDER_IMAGE="che-theia-endpoint-builder:tmp"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
 
-if [ ! -d "${TMP_DIR}" ]; then
+if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
-  if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; # if the branch includes an @SHA suffix, use that SHA from the branch
-    git clone -b ${CHE_THEIA_BRANCH%%@*} --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+  if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
+    git clone -b "${CHE_THEIA_BRANCH%%@*}" --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo ERR"OR: could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH%%@*} !"; exit 1; fi 
     pushd "${TMP_DIR}"/che-theia >/dev/null
-      git reset ${CHE_THEIA_BRANCH##*@} --hard
+      git reset "${CHE_THEIA_BRANCH##*@}" --hard
       if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${CHE_THEIA_BRANCH##*@}" ]]; then 
         echo ERR"OR: could not find SHA ${CHE_THEIA_BRANCH##*@} in branch ${CHE_THEIA_BRANCH%%@*} !"; 
         echo "Latest 10 commits:"
@@ -112,7 +112,7 @@ if [ ! -d "${TMP_DIR}" ]; then
       fi
     popd >/dev/null
   else # clone from tag/branch
-    git clone -b ${CHE_THEIA_BRANCH} --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    git clone -b "${CHE_THEIA_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo ERR"OR: could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
   fi
   
@@ -128,7 +128,7 @@ mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
 DOCKERFILES_ROOT_DIR=${TMP_DIR}/che-theia/dockerfiles
 
 handle_che_theia_dev() {
-  cd ${base_dir}
+  cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
 
   # build only ubi8 image
@@ -183,7 +183,7 @@ handle_che_theia_dev() {
 
 # now do che-theia
 handle_che_theia() {
-  cd ${base_dir}
+  cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
   # build only ubi8 image and for target builder first, so we can extract data
@@ -257,7 +257,7 @@ handle_che_theia() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   # Copy branding files
-  cp -r ${base_dir}/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
+  cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
@@ -267,7 +267,7 @@ handle_che_theia() {
 
 # now do che-theia-endpoint-runtime
 handle_che_theia_endpoint_runtime() {
-  cd ${base_dir}
+  cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime
 
   # build only ubi8 image and for target builder first, so we can extract data
@@ -339,7 +339,7 @@ handle_che_theia_endpoint_runtime() {
 
 # now do che-theia-endpoint-runtime-binary
 handle_che_theia_endpoint_runtime_binary() {
-  cd ${base_dir}
+  cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
 
   # build only ubi8 image and for target builder first, so we can extract data
