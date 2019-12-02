@@ -2,8 +2,8 @@
 
 // PARAMETERS for this pipeline:
 // branchToBuildCRW = codeready-workspaces branch to build: */2.0.x or */master
-// THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.11.0
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.3.1, 7.3.0
+// THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.12.0
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.3.2, 7.3.3
 // node == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram||rhel7-devstudio-releng||rhel7 or rhel7-32gb||rhel7-16gb||rhel7-8gb
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
