@@ -41,7 +41,11 @@ Additional flags:
 
   --squash   | if running docker in experimental mode, squash images
   --no-cache | do not use docker cache
-  --no-tests | replace test(...) with test.skip(...) in .ts test files
+
+Test control flags:
+  --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
+  --no-sync-tests  | replace test(...)         with test.skip(...) in .ts test files
+  --no-tests       | skip both sync and async tests in .ts test files
 
 Cleanup options:
 
@@ -55,7 +59,8 @@ if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 STEPS=""
 DELETE_TMP_IMAGES=0
 DELETE_ALL_IMAGES=0
-SKIP_TESTS=0
+SKIP_ASYNC_TESTS=0
+SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 
 CHE_THEIA_BRANCH="master"
@@ -74,7 +79,9 @@ for key in "$@"; do
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
       '--rmi:all') DELETE_ALL_IMAGES=1; shift 1;;
-      '--no-tests') SKIP_TESTS=1; shift 1;;
+      '--no-async-tests') SKIP_ASYNC_TESTS=1; shift 1;;
+      '--no-sync-tests')  SKIP_SYNC_TESTS=1; shift 1;;
+      '--no-tests')       SKIP_ASYNC_TESTS=1; SKIP_SYNC_TESTS=1; shift 1;;
   esac
 done
 
@@ -118,17 +125,35 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
   fi
   
-  if [[ ${SKIP_TESTS} = 1 ]]; then
+  if [[ ${SKIP_ASYNC_TESTS} -eq 1 ]]; then
     set +e
+    set +x
     for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
-      IS_TEST="$(cat $d | grep "test(" | grep "async () => {")"
-      if [[ ${IS_TEST} ]]; then
-        echo "Disabling tests in $d ..."
-        echo $IS_TEST
+      ASYNC_TESTS="$(cat $d | grep "test(" | grep "async () => {")"
+      if [[ ${ASYNC_TESTS} ]]; then
+        echo "[WARN] Disable async tests in $d"
+        # echo $ASYNC_TESTS
         sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
+        cat $d | grep "test.skip("
       fi
     done
     set -e
+    set -x
+  fi
+  if [[ ${SKIP_SYNC_TESTS} -eq 1 ]]; then
+    set +e
+    set +x
+    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
+      SYNC_TESTS="$(cat $d | grep "test(" | grep -v "async" | grep "() => {")"
+      if [[ ${SYNC_TESTS} ]]; then
+        echo "[WARN] Disable sync tests in $d"
+        # echo $SYNC_TESTS
+        sed -i $d -e "s@test(\(.\+() => {\)@test.skip(\1@g"
+        cat $d | grep "test.skip("
+      fi
+    done
+    set -e
+    set -x
   fi
 
   # apply patches against che-theia sources
