@@ -77,7 +77,7 @@ timeout(120) {
 		// '''
 
 		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all"
+		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-tests"
 		ansiColor('xterm') {
 			sh '''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
