@@ -131,7 +131,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
       ASYNC_TESTS="$(cat $d | grep "test(" | grep "async () => {")"
       if [[ ${ASYNC_TESTS} ]]; then
-        echo "[WARN] Disable async tests in $d"
+        echo "[WARNING] Disable async tests in $d"
         # echo $ASYNC_TESTS
         sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
         cat $d | grep "test.skip("
@@ -146,7 +146,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
       SYNC_TESTS="$(cat $d | grep "test(" | grep -v "async" | grep "() => {")"
       if [[ ${SYNC_TESTS} ]]; then
-        echo "[WARN] Disable sync tests in $d"
+        echo "[WARNING] Disable sync tests in $d"
         # echo $SYNC_TESTS
         sed -i $d -e "s@test(\(.\+() => {\)@test.skip(\1@g"
         cat $d | grep "test.skip("
