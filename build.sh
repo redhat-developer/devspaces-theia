@@ -25,8 +25,8 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
 
 Example:
-  $0 --ctb 7.3.0 --tb v0.12.0 --all --no-cache --rmi:all --squash
-  $0 --ctb master --tb master --all --no-cache --rmi:tmp
+  $0 --ctb 7.3.3 --tb v0.12.0 --all --no-tests --no-cache --rmi:all --squash
+  $0 --ctb master --tb master -d -t --no-cache --rmi:tmp
 
 Options: 
   $0 -d      | build theia-dev
@@ -128,9 +128,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
         sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
       fi
     done
+    set -e
   fi
-
-  exit
 
   # apply patches against che-theia sources
   pushd "${CHE_THEIA_DIR}" >/dev/null
