@@ -134,7 +134,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
         echo "[WARNING] Disable async tests in $d"
         # echo $ASYNC_TESTS
         sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
-        cat $d | grep "test.skip("
+        cat $d | grep "test.skip(" | grep "async () => {"
       fi
     done
     set -e
@@ -149,7 +149,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
         echo "[WARNING] Disable sync tests in $d"
         # echo $SYNC_TESTS
         sed -i $d -e "s@test(\(.\+() => {\)@test.skip(\1@g"
-        cat $d | grep "test.skip("
+        cat $d | grep "test.skip(" | grep -v "async" | grep "() => {"
       fi
     done
     set -e
