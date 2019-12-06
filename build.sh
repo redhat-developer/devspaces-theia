@@ -41,6 +41,7 @@ Additional flags:
 
   --squash   | if running docker in experimental mode, squash images
   --no-cache | do not use docker cache
+  --no-tests | replace test(...) with test.skip(...) in .ts test files
 
 Cleanup options:
 
@@ -54,6 +55,7 @@ if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 STEPS=""
 DELETE_TMP_IMAGES=0
 DELETE_ALL_IMAGES=0
+SKIP_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 
 CHE_THEIA_BRANCH="master"
@@ -72,6 +74,7 @@ for key in "$@"; do
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
       '--rmi:all') DELETE_ALL_IMAGES=1; shift 1;;
+      '--no-tests') SKIP_TESTS=1; shift 1;;
   esac
 done
 
@@ -115,6 +118,25 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
   fi
   
+  if [[ ${SKIP_TESTS} = 1 ]]; then
+    set +e
+    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
+      IS_TEST="$(cat $d | grep "test(" | grep "async () => {")"
+      if [[ ${IS_TEST} ]]; then
+        echo "Disabling tests in $d ..."
+        echo $IS_TEST
+        sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
+      fi
+    done
+  fi
+
+  exit
+
+  # apply patches against che-theia sources
+  pushd "${CHE_THEIA_DIR}" >/dev/null
+    # TODO add some patches into ./patches/ and apply them here
+  popd >/dev/null
+
   # init yarn in che-theia
   pushd "${CHE_THEIA_DIR}" >/dev/null
   CHE_THEIA_SHA=$(git rev-parse --short=4 HEAD); echo "CHE_THEIA_SHA=${CHE_THEIA_SHA}"
