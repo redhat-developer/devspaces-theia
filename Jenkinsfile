@@ -51,7 +51,7 @@ npm --version; yarn --version
 
 timeout(120) {
 	node("${node}"){
-		stage "Build CRW Theia"
+		stage "Build CRW Theia --no-async-tests"
 		cleanWs()
 		// for private repo, use checkout(credentialsId: 'devstudio-release')
 		checkout([$class: 'GitSCM', 
@@ -77,7 +77,7 @@ timeout(120) {
 		// '''
 
 		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-tests"
+		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
 		ansiColor('xterm') {
 			sh '''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
