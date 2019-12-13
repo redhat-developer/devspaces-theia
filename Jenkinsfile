@@ -80,16 +80,19 @@ timeout(120) {
 			// TODO pass che-theia and theia tags/branches to this script
 			def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
 			ansiColor('xterm') {
-				def statusCode = sh script:'''#!/bin/bash -xe
+				def buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
 	./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
 ''', returnStatus: true
-				if (statusCode != 0)
+				def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+
+				if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
 				{
-					error "[ERROR] Build has failed."
+					error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
+					currentBuild.result = 'FAILED'
 				}
 			}
 
