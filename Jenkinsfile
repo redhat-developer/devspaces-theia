@@ -138,15 +138,18 @@ error /(?i)^error /
 		} 
 		finally 
 		{
-			step([$class: 'LogParserPublisher',
-			failBuildOnError: true,
-			unstableOnWarning: false,
-			projectRulePath: 'project.rules',
-			useProjectRule: true])
-		} 
-		catch (all)
-		{
-			print "ERROR: LogParserPublisher failed: \n" +al
+			try 
+			{
+				step([$class: 'LogParserPublisher',
+				failBuildOnError: true,
+				unstableOnWarning: false,
+				projectRulePath: 'project.rules',
+				useProjectRule: true])
+			} 
+			catch (all)
+			{
+				print "ERROR: LogParserPublisher failed: \n" +al
+			}
 		}
 
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
