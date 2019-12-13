@@ -34,7 +34,7 @@ strict-ssl false
 cat ${HOME}/.npmrc
 cat ${HOME}/.yarnrc
 
-npm install --global yarn
+npm install --global yarn@1.21.0
 npm config get; yarn config get list
 npm --version; yarn --version
 '''
