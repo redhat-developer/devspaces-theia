@@ -145,12 +145,7 @@ error /(?i)^error /
 		{
 			print "ERROR: LogParserPublisher failed: \n" +al
 		}
-	}
-}
 
-timeout(120) {
-	node("${node}"){
-		stage "rhpkg container-build: theia-dev"
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
 		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -163,7 +158,7 @@ timeout(120) {
 		build(
 		  job: 'get-sources-rhpkg-container-build',
 		  wait: false,
-		  propagate: false,
+		  propagate: true,
 		  parameters: [
 			[
 			  $class: 'StringParameterValue',
@@ -192,16 +187,11 @@ timeout(120) {
 			]
 		  ]
 		)
-	}
-}
 
-timeout(120) {
-	node("${node}"){
-		stage "rhpkg container-build: theia"
-		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
+		QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
 
-		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+		matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+		JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
 		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
 		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
@@ -210,7 +200,7 @@ timeout(120) {
 		build(
 		  job: 'get-sources-rhpkg-container-build',
 		  wait: false,
-		  propagate: false,
+		  propagate: true,
 		  parameters: [
 			[
 			  $class: 'StringParameterValue',
@@ -239,16 +229,11 @@ timeout(120) {
 			]
 		  ]
 		)
-	}
-}
 
-timeout(120) {
-	node("${node}"){
-		stage "rhpkg container-build: theia-endpoint"
-		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
+		QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
 
-		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+		matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+		JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
 		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
 		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
@@ -257,7 +242,7 @@ timeout(120) {
 		build(
 		  job: 'get-sources-rhpkg-container-build',
 		  wait: false,
-		  propagate: false,
+		  propagate: true,
 		  parameters: [
 			[
 			  $class: 'StringParameterValue',
