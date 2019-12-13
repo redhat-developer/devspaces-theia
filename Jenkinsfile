@@ -52,57 +52,58 @@ npm --version; yarn --version
 timeout(120) {
 	node("${node}"){
 		stage "Build CRW Theia --no-async-tests"
-		cleanWs()
-		// for private repo, use checkout(credentialsId: 'devstudio-release')
-		checkout([$class: 'GitSCM', 
-			branches: [[name: "${branchToBuildCRW}"]], 
-			doGenerateSubmoduleConfigurations: false, 
-			poll: true,
-			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-			submoduleCfg: [], 
-			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-		installNPM()
+		try {
+			cleanWs()
+			// for private repo, use checkout(credentialsId: 'devstudio-release')
+			checkout([$class: 'GitSCM', 
+				branches: [[name: "${branchToBuildCRW}"]], 
+				doGenerateSubmoduleConfigurations: false, 
+				poll: true,
+				extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+				submoduleCfg: [], 
+				userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+			installNPM()
 
-		// CRW-360 use RH NPM mirror
-		// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
-		// 	sh '''#!/bin/bash -xe 
-		// 	for d in $(find . -name yarn.lock -o -name package.json); do 
-		// 		sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
-		// 	'''
-		// }
+			// CRW-360 use RH NPM mirror
+			// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
+			// 	sh '''#!/bin/bash -xe 
+			// 	for d in $(find . -name yarn.lock -o -name package.json); do 
+			// 		sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
+			// 	'''
+			// }
 
-		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
-		// sh '''#!/bin/bash -xe 
-		// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
-		// '''
+			// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
+			// sh '''#!/bin/bash -xe 
+			// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
+			// '''
 
-		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
-		ansiColor('xterm') {
-			sh '''#!/bin/bash -xe
+			// TODO pass che-theia and theia tags/branches to this script
+			def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
+			ansiColor('xterm') {
+				sh '''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
 	./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
 '''
-		}
+			}
 
-		archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
-			crw-theia/dockerfiles/**/*, \
-			crw-theia/dockerfiles/**/**/*, \
-			crw-theia/dockerfiles/**/**/**/*, \
-			crw-theia/dockerfiles/**/**/**/**/*, \
-			crw-theia/dockerfiles/**/**/**/**/**/*, \
-			crw-theia/dockerfiles/**/**/**/**/**/**/*, \
-			logs/*"
+			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
+				crw-theia/dockerfiles/**/*, \
+				crw-theia/dockerfiles/**/**/*, \
+				crw-theia/dockerfiles/**/**/**/*, \
+				crw-theia/dockerfiles/**/**/**/**/*, \
+				crw-theia/dockerfiles/**/**/**/**/**/*, \
+				crw-theia/dockerfiles/**/**/**/**/**/**/*, \
+				logs/*"
 
-		// TODO start collecting shas with "git rev-parse --short=4 HEAD"
-		def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
-		echo "${descriptString}"
-		currentBuild.description="${descriptString}"
+			// TODO start collecting shas with "git rev-parse --short=4 HEAD"
+			def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
+			echo "${descriptString}"
+			currentBuild.description="${descriptString}"
 
-    	writeFile(file: 'project.rules', text:
+			writeFile(file: 'project.rules', text:
 '''
 # warnings/errors to ignore
 ok /Couldn't create directory: Failure/
@@ -134,13 +135,15 @@ error /fatal: Remote branch/
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
 ''')
-		try {
+		} 
+		finally 
+		{
 			step([$class: 'LogParserPublisher',
 			failBuildOnError: true,
 			unstableOnWarning: false,
 			projectRulePath: 'project.rules',
 			useProjectRule: true])
-		}
+		} 
 		catch (all)
 		{
 			print "ERROR: LogParserPublisher failed: \n" +al
