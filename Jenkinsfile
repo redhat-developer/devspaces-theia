@@ -52,49 +52,42 @@ npm --version; yarn --version
 timeout(120) {
 	node("${node}"){
 		stage "Build CRW Theia --no-async-tests"
-		try {
-			cleanWs()
-			// for private repo, use checkout(credentialsId: 'devstudio-release')
-			checkout([$class: 'GitSCM', 
-				branches: [[name: "${branchToBuildCRW}"]], 
-				doGenerateSubmoduleConfigurations: false, 
-				poll: true,
-				extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-				submoduleCfg: [], 
-				userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-			installNPM()
 
-			// CRW-360 use RH NPM mirror
-			// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
-			// 	sh '''#!/bin/bash -xe 
-			// 	for d in $(find . -name yarn.lock -o -name package.json); do 
-			// 		sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
-			// 	'''
-			// }
+		cleanWs()
+		// for private repo, use checkout(credentialsId: 'devstudio-release')
+		checkout([$class: 'GitSCM', 
+			branches: [[name: "${branchToBuildCRW}"]], 
+			doGenerateSubmoduleConfigurations: false, 
+			poll: true,
+			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+			submoduleCfg: [], 
+			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+		installNPM()
 
-			// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
-			// sh '''#!/bin/bash -xe 
-			// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
-			// '''
+		// CRW-360 use RH NPM mirror
+		// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
+		// 	sh '''#!/bin/bash -xe 
+		// 	for d in $(find . -name yarn.lock -o -name package.json); do 
+		// 		sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
+		// 	'''
+		// }
 
-			// TODO pass che-theia and theia tags/branches to this script
-			def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
-			ansiColor('xterm') {
-				def buildStatusCode = sh script:'''#!/bin/bash -xe
+		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
+		// sh '''#!/bin/bash -xe 
+		// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
+		// '''
+
+		// TODO pass che-theia and theia tags/branches to this script
+		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
+		def buildStatusCode = 0
+		ansiColor('xterm') {
+			buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
 	./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
 ''', returnStatus: true
-				def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
-
-				if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
-				{
-					error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
-					currentBuild.result = 'FAILED'
-				}
-			}
 
 			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
 				crw-theia/dockerfiles/**/*, \
@@ -142,9 +135,6 @@ error /fatal: Remote branch/
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
 ''')
-		} 
-		finally 
-		{
 			try 
 			{
 				step([$class: 'LogParserPublisher',
@@ -152,10 +142,17 @@ error /(?i)^error /
 				unstableOnWarning: false,
 				projectRulePath: 'project.rules',
 				useProjectRule: true])
-			} 
+			}
 			catch (all)
 			{
 				print "ERROR: LogParserPublisher failed: \n" +al
+			}
+
+			def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+			if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
+			{
+				error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
+				currentBuild.result = 'FAILED'
 			}
 		}
 	}
