@@ -10,6 +10,7 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def installNPM(){
+	def yarnVersion="1.21.0"
 	def nodeHome = tool 'nodejs-10.15.3'
 	env.PATH="${nodeHome}/bin:${env.PATH}"
 	sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
@@ -34,7 +35,7 @@ strict-ssl false
 cat ${HOME}/.npmrc
 cat ${HOME}/.yarnrc
 
-npm install --global yarn@1.21.0
+npm install --global yarn@''' + yarnVersion '''
 npm config get; yarn config get list
 npm --version; yarn --version
 '''
@@ -43,7 +44,7 @@ npm --version; yarn --version
 	{
 		sh '''#!/bin/bash -xe
 rm -f ${HOME}/.npmrc ${HOME}/.yarnrc
-npm install --global yarn
+npm install --global yarn@''' + yarnVersion '''
 npm --version; yarn --version
 '''
 	}
