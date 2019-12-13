@@ -80,13 +80,17 @@ timeout(120) {
 			// TODO pass che-theia and theia tags/branches to this script
 			def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
 			ansiColor('xterm') {
-				sh '''#!/bin/bash -xe
+				def statusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
 	./build.sh ''' + BUILD_PARAMS + ''' | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
-'''
+''', returnStatus: true
+				if (statusCode != 0)
+				{
+					error "[ERROR] Build has failed."
+				}
 			}
 
 			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
@@ -151,6 +155,12 @@ error /(?i)^error /
 				print "ERROR: LogParserPublisher failed: \n" +al
 			}
 		}
+	}
+}
+ 
+timeout(120) {
+    node("${node}"){
+       stage "rhpkg container-builds"
 
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
