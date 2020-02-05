@@ -2,10 +2,10 @@ diff --git a/packages/core/src/browser/style/index.css b/packages/core/src/brows
 index ce0551792..d3b7c362a 100644
 --- a/packages/core/src/browser/style/index.css
 +++ b/packages/core/src/browser/style/index.css
-@@ -58,12 +58,30 @@ body {
+@@ -95,12 +95,30 @@ blockquote {
    bottom: 0;
    z-index: 50000;
-   background: var(--theia-layout-color0);
+   background: var(--theia-editor-background);
 -  background-image: var(--theia-preloader);
 -  background-size: 60px 60px;
 +}
@@ -70,7 +70,7 @@ index 8718a9d02..925c3b790 100644
 @@ -129,11 +129,30 @@
      left: 0;
      z-index: 10;
-     background: var(--theia-layout-color3);
+     background: var(--theia-editor-background);
 +}
 +
 +.theia-mini-browser-load-indicator::before {
