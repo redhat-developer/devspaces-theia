@@ -21,4 +21,4 @@ RUN \
     # Add offline mode in examples
     && sed -i -e "s|spawnSync('yarn', \[\]|spawnSync('yarn', \['--offline'\]|" ${HOME}/theia-source-code/plugins/foreach_yarn \
     # Disable automatic tests that connect online
-    && sed -i -e "s/ && yarn test//" plugins/factory-plugin/package.json 
+    && for d in plugins/*/package.json; do echo "Disable 'yarn test' in $d"; sed -i -e "s/ && yarn test//" $d; done
