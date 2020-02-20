@@ -8,14 +8,15 @@ COPY asset-yarn.tar.gz asset-post-download-dependencies.tar.gz /tmp/
 RUN tar xzf /tmp/asset-yarn.tar.gz -C / && rm -f /tmp/asset-yarn.tar.gz && \
     tar xzf /tmp/asset-post-download-dependencies.tar.gz -C / && rm -f /tmp/asset-post-download-dependencies.tar.gz
 
-COPY asset-node-headers.tar.gz ${HOME}/asset-node-headers.tar.gz
-
 # Copy yarn.lock to be the same than the previous build
 COPY asset-yarn.lock ${HOME}/theia-source-code/yarn.lock
 
+COPY asset-node-headers.tar.gz ${HOME}/asset-node-headers.tar.gz
 RUN \
-    # Define node headers
+    # Use local file for node headers
     npm config set tarball ${HOME}/asset-node-headers.tar.gz && \
+    # Disable puppeteer from downloading chromium
+    npm config set puppeteer_skip_chromium_download true -g && \
     # Disable travis script
     echo "#!/usr/bin/env node" > /home/theia-dev/theia-source-code/scripts/prepare-travis \
     # Add offline mode in examples
