@@ -270,12 +270,14 @@ handle_che_theia() {
   
   # post-install dependencies
   # /home/theia-dev/theia-source-code/packages/debug-nodejs/download = node debug vscode binary
+  # /home/theia-dev/theia-source-code/plugins/ = VS Code extensions
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
   docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} ls -la /tmp/vscode-ripgrep-cache*
   docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} tar -pzcf - \
     /home/theia-dev/theia-source-code/packages/debug-nodejs/download  \
     /tmp/vscode-ripgrep-cache-* \
+    /home/theia-dev/theia-source-code/plugins/  \
     /home/theia-dev/.cache > asset-post-download-dependencies.tar.gz
   
   # node-headers
