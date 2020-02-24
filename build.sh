@@ -210,10 +210,10 @@ handle_che_theia_dev() {
   # /usr/local/share/.cache/yarn/v4 = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint= ${TMP_THEIA_DEV_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_DEV_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4 \
     /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global > asset-yarn.tgz
+    /opt/app-root/src/.npm-global' > asset-yarn.tgz
   popd >/dev/null
   
   # Copy generate Dockerfile
@@ -263,38 +263,38 @@ handle_che_theia() {
   # /usr/local/share/.cache/yarn/v4 = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4 \
     /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global > asset-yarn.tar.gz
+    /opt/app-root/src/.npm-global' > asset-yarn.tar.gz
   
   # post-install dependencies
   # /home/theia-dev/theia-source-code/packages/debug-nodejs/download = node debug vscode binary
   # /home/theia-dev/theia-source-code/plugins/ = VS Code extensions
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} ls -la /tmp/vscode-ripgrep-cache*
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'ls -la /tmp/vscode-ripgrep-cache*'
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /home/theia-dev/theia-source-code/packages/debug-nodejs/download  \
     /tmp/vscode-ripgrep-cache-* \
     /home/theia-dev/theia-source-code/plugins/  \
-    /home/theia-dev/.cache > asset-post-download-dependencies.tar.gz
+    /home/theia-dev/.cache' > asset-post-download-dependencies.tar.gz
   
   # node-headers
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
   
   # Add yarn.lock after compilation
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} sh -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
 
   # Theia source code
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} sh -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
 
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v4/ = yarn cache dir
   # /opt/app-root/src/.npm-global = npm global
-  docker run --rm --entrypoint= ${TMP_THEIA_RUNTIME_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_RUNTIME_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4/ \
-    /opt/app-root/src/.npm-global > asset-yarn-runtime-image.tar.gz
+    /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
 
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
@@ -345,32 +345,32 @@ handle_che_theia_endpoint_runtime() {
   # /usr/local/share/.cache/yarn/v4 = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4 \
     /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global > asset-theia-endpoint-runtime-yarn.tar.gz
+    /opt/app-root/src/.npm-global' > asset-theia-endpoint-runtime-yarn.tar.gz
   
   # node-headers
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
+  docker run --rm ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
   
   # Add yarn.lock after compilation
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} sh -c 'cat /home/workspace/yarn.lock' > asset-workspace-yarn.lock
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} sh -c 'cat /home/workspace/packages/theia-remote/yarn.lock' > asset-theia-remote-yarn.lock
+  docker run --rm ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'cat /home/workspace/yarn.lock' > asset-workspace-yarn.lock
+  docker run --rm ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'cat /home/workspace/packages/theia-remote/yarn.lock' > asset-theia-remote-yarn.lock
 
   # post-install dependencies
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} ls -la /tmp/vscode-ripgrep-cache*
-  docker run --rm --entrypoint= ${TMP_THEIA_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'ls -la /tmp/vscode-ripgrep-cache*'
+  docker run --rm ${TMP_THEIA_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /tmp/vscode-ripgrep-cache-* \
-    /home/theia-dev/.cache > asset-download-dependencies.tar.gz
+    /home/theia-dev/.cache' > asset-download-dependencies.tar.gz
   
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v4/ = yarn cache dir
   # /opt/app-root/src/.npm-global = npm global
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4/ \
-    /opt/app-root/src/.npm-global > asset-yarn-runtime-image.tar.gz
+    /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
 
   rm -rf src docker-build
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/etc .
@@ -418,12 +418,12 @@ handle_che_theia_endpoint_runtime_binary() {
   # /usr/local/share/.cache/yarn/v4 = yarn cache dir
   # /usr/local/share/.config/yarn/global
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} tar -pzcf - \
+  docker run --rm ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v4 \
-    /usr/local/share/.config/yarn/global > asset-theia-endpoint-runtime-binary-yarn.tar.gz
+    /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
   # node
-  docker run --rm --entrypoint= ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
+  docker run --rm ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --entrypoint=/bin/sh -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
   
   # Copy generate Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
