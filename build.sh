@@ -25,7 +25,7 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
 
 Example:
-  $0 --ctb 7.8.0 --tb v0.15.0 --all --no-tests --no-cache --rmi:all --squash
+  $0 --ctb 7.9.0 --tb master --all --no-tests --no-cache --rmi:all --squash
   $0 --ctb master --tb master -d -t --no-cache --rmi:tmp
 
 Options: 
