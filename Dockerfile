@@ -25,9 +25,30 @@ ENV NODEJS_VERSION=10 \
     PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:/usr/bin:$PATH
 WORKDIR /projects
 
-RUN yum install -y java-1.8.0-openjdk curl bzip2 python36 && \
-    npm install -g node@${NODE_VERSION} yarn@${YARN_VERSION} && \
+# much love to https://stackoverflow.com/questions/54397706/how-to-output-a-multiline-string-in-dockerfile-with-a-single-command
+RUN echo $'[centos8-AppStream] \n\
+name=CentOS-8 - AppStream \n\
+baseurl=http://mirror.centos.org/centos-8/8/AppStream/x86_64/os/\n\
+gpgcheck=0\n\
+enabled=1\n\
+\n\
+[centos8-BaseOS]\n\
+name=CentOS-8 - AppStream\n\
+baseurl=http://mirror.centos.org/centos-8/8/BaseOS/x86_64/os/\n\
+gpgcheck=0\n\
+enabled=1\n\
+' >> /etc/yum.repos.d/centos8.repo && cat /etc/yum.repos.d/centos8.repo && \
+    # do we need java-1.8.0-openjdk?
+    yum install --nogpgcheck -y wget curl tar gzip bzip2 python36 podman buildah skopeo containers-common && \
+    rm -f /usr/bin/python && ln -s /usr/bin/python36 /usr/bin/python && \
+    python --version && \
+    podman --version && docker --version && \
+    buildah --version && skopeo --version
+RUN npm install -g node@${NODE_VERSION} yarn@${YARN_VERSION} && \
+    echo -n "node " && node --version && \
+    echo -n "yarn " && yarn --version && \
     ln -s /usr/bin/node /usr/bin/nodejs && \
+    ln -s /usr/bin/podman /usr/bin/docker && \
     for f in "${HOME}" "/opt/app-root/src/.npm-global"; do \
       chgrp -R 0 ${f} && \
       chmod -R g+rwX ${f}; \
