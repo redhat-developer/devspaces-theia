@@ -62,5 +62,8 @@ RUN npm install -g node@${NODE_VERSION} yarn@${YARN_VERSION} && \
       chmod -R g+rwX ${f}; \
     done
 COPY build.sh conf ./
+
+# switch from overlay to vfs in case we're in nested container hell
+RUN sed -i /etc/containers/storage.conf -re 's|driver = .+|driver = "vfs"|'
 RUN ./build.sh --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --all \
       --no-tests --no-cache
