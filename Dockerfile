@@ -39,16 +39,17 @@ gpgcheck=0\n\
 enabled=1\n\
 ' >> /etc/yum.repos.d/centos8.repo && cat /etc/yum.repos.d/centos8.repo && \
     # do we need java-1.8.0-openjdk?
-    yum install --nogpgcheck -y wget curl tar gzip bzip2 python36 podman buildah skopeo containers-common && \
-    rm -f /usr/bin/python && ln -s /usr/bin/python36 /usr/bin/python && \
-    python --version && \
+    yum install --nogpgcheck -y wget curl tar gzip bzip2 python36 podman buildah skopeo containers-common
+RUN pushd /usr/bin; rm -f python; ln -s ./python36 python; popd && whereis python && echo "PATH = $PATH" && \
+    /usr/bin/python3 --version && \
+    ln -s /usr/bin/podman /usr/bin/docker && \
+    echo "NOTE: using podman as drop-in repacement for docker in /usr/bin" && \
     podman --version && docker --version && \
     buildah --version && skopeo --version
 RUN npm install -g node@${NODE_VERSION} yarn@${YARN_VERSION} && \
     echo -n "node " && node --version && \
     echo -n "yarn " && yarn --version && \
     ln -s /usr/bin/node /usr/bin/nodejs && \
-    ln -s /usr/bin/podman /usr/bin/docker && \
     for f in "${HOME}" "/opt/app-root/src/.npm-global"; do \
       chgrp -R 0 ${f} && \
       chmod -R g+rwX ${f}; \
