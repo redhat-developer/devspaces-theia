@@ -16,6 +16,13 @@ USER root
 # this script requires a github personal access token
 ARG GITHUB_TOKEN=YOUR_TOKEN_HERE
 
+RUN if [[ ${GITHUB_TOKEN} == "YOUR_TOKEN_HERE" ]]; then \
+  echo; echo "ERROR: Must run this build with a valid GITHUB_TOKEN, eg.,"; \
+  echo; \
+  echo "  podman build -t crw-theia-builder . -f Dockerfile --build-arg GITHUB_TOKEN=cafef00dd00dbabebeaddabbadd00"; \
+  echo; exit 1; \
+fi
+
 # set alternate branches and versions if required
 ARG CHE_THEIA_BRANCH=7.9.x
 ARG THEIA_BRANCH=master
