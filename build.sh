@@ -39,6 +39,8 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
 
+  $0 --tgr   | container build arg THEIA_GITHUB_REPO from which to get theia sources, 
+             | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
   --squash   | if running docker in experimental mode, squash images
   --no-cache | do not use docker cache
 
@@ -65,11 +67,12 @@ DOCKERFLAGS="" # eg., --no-cache --squash
 
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
-
+THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
 for key in "$@"; do
   case $key in 
       '--ctb') CHE_THEIA_BRANCH="$2"; shift 2;;
       '--tb') THEIA_BRANCH="$2"; shift 2;;
+      '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
       '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;; # not needed anymore
@@ -234,7 +237,9 @@ handle_che_theia() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false --tag:next --branch:${THEIA_BRANCH} --target:builder
+  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} \
+    --tag:next --branch:${THEIA_BRANCH} --target:builder
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
