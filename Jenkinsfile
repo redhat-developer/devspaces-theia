@@ -10,8 +10,8 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def installNPM(){
-	def yarnVersion="1.21.0"
-	def nodeHome = tool 'nodejs-10.15.3'
+	def yarnVersion="1.17.3"
+	def nodeHome = tool 'nodejs-10.14.1'
 	env.PATH="${nodeHome}/bin:${env.PATH}"
 	sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
 	if ("${USE_PUBLIC_NEXUS}".equals("false")) {
