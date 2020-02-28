@@ -26,7 +26,7 @@ fi
 # set alternate branches and versions if required
 ARG CHE_THEIA_BRANCH=7.9.x
 ARG THEIA_BRANCH=master
-ARG NODE_VERSION=10.16.3
+ARG NODE_VERSION=10.14.1
 ARG YARN_VERSION=1.17.3
 ENV NODEJS_VERSION=10 \
     PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:/usr/bin:$PATH
