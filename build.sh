@@ -22,11 +22,11 @@ See https://github.com/settings/tokens for more information.
 
 Usage:
   export GITHUB_TOKEN=*your token here*
-  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH [options] 
+  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO [options] 
 
 Example:
-  $0 --ctb 7.9.0 --tb master --all --no-tests --no-cache --rmi:all --squash
-  $0 --ctb master --tb master -d -t --no-cache --rmi:tmp
+  $0 --ctb 7.9.0 --tb crw-2.1.0.rc1 --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache 
+  $0 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
 
 Options: 
   $0 -d      | build theia-dev
@@ -39,7 +39,7 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
 
-  $0 --tgr   | container build arg THEIA_GITHUB_REPO from which to get theia sources, 
+  --tgr      | container build arg THEIA_GITHUB_REPO from which to get theia sources, 
              | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
   --squash   | if running docker in experimental mode, squash images
   --no-cache | do not use docker cache
