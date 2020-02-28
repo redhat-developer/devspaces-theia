@@ -244,7 +244,7 @@ handle_che_theia() {
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}--build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
   # and create runtime image as well
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
