@@ -31,7 +31,6 @@ Example:
 Options: 
   $0 -d      | build theia-dev
   $0 -t      | build (or rebuild) theia. Note: if theia-dev not already built, must add -d flag too
-  $0 -r      | build (or rebuild) theia-endpoint-runtime. Note: if theia-dev not already built, must add -d flag too
   $0 -b      | build (or rebuild) theia-endpoint-runtime-binary. Note: if theia-dev not already built, must add -d flag too
   $0 --all   | build 3 projects: theia-dev, theia, theia-endpoint-runtime-binary
 
@@ -75,7 +74,6 @@ for key in "$@"; do
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
-      '-r') STEPS="${STEPS} handle_che_theia_endpoint_runtime"; shift 1;; # not needed anymore
       '-b') STEPS="${STEPS} handle_che_theia_endpoint_runtime_binary"; shift 1;;
       '--all') STEPS="handle_che_theia_dev handle_che_theia handle_che_theia_endpoint_runtime_binary"; shift 1;;
       '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
@@ -319,82 +317,6 @@ handle_che_theia() {
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
-  popd >/dev/null
-}
-
-# now do che-theia-endpoint-runtime
-handle_che_theia_endpoint_runtime() {
-  cd "${base_dir}"
-  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime
-
-  # build only ubi8 image and for target builder first, so we can extract data
-  pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
-  # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false  
-  # keep a copy of the file
-  cp .Dockerfile .ubi8-dockerfile
-  # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  popd >/dev/null
-  
-  # Create image theia-endpoint-runtime:ubi8-brew
-  rm -rf "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/docker/ubi8-brew
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/docker/ubi8 "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/docker/ubi8-brew
-  # Add extra conf
-  cp conf/theia-endpoint-runtime/ubi8-brew/* "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/docker/ubi8-brew/
-  
-  # dry-run for theia-endpoint-runtime:ubi8-brew to only generate Dockerfile
-  pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false
-  popd >/dev/null
-  
-  # Copy assets from ubi8 to local
-  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime >/dev/null
-
-  # npm/yarn cache
-  # /usr/local/share/.cache/yarn/v4 = yarn cache dir
-  # /home/theia-dev/.yarn-global = yarn
-  # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm  --entrypoint sh ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /usr/local/share/.cache/yarn/v4 \
-    /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global' > asset-theia-endpoint-runtime-yarn.tar.gz
-  
-  # node-headers
-  docker run --rm  --entrypoint sh ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
-  
-  # Add yarn.lock after compilation
-  docker run --rm  --entrypoint sh ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} -c 'cat /home/workspace/yarn.lock' > asset-workspace-yarn.lock
-  docker run --rm  --entrypoint sh ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} -c 'cat /home/workspace/packages/theia-remote/yarn.lock' > asset-theia-remote-yarn.lock
-
-  # post-install dependencies
-  # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
-  # /home/theia-dev/.cache = include electron/node-gyp cache
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la /tmp/vscode-ripgrep-cache*'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /tmp/vscode-ripgrep-cache-* \
-    /home/theia-dev/.cache' > asset-download-dependencies.tar.gz
-  
-  # npm/yarn cache
-  # /usr/local/share/.cache/yarn/v4/ = yarn cache dir
-  # /opt/app-root/src/.npm-global = npm global
-  docker run --rm  --entrypoint sh ${TMP_THEIA_ENDPOINT_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /usr/local/share/.cache/yarn/v4/ \
-    /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
-
-  rm -rf src docker-build
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/etc .
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/docker-build .
-  
-  # Copy generate Dockerfile
-  cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime/Dockerfile
-  
-  # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_IMAGE_NAME} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 }
 
