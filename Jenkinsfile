@@ -50,7 +50,7 @@ npm --version; yarn --version
 	}
 }
 
-timeout(120) {
+timeout(180) {
 	node("${node}"){
 		stage "Build CRW Theia --no-async-tests"
 
@@ -159,7 +159,7 @@ error /(?i)^error /
 	}
 }
  
-timeout(120) {
+timeout(180) {
     node("${node}"){
        stage "rhpkg container-builds"
 
