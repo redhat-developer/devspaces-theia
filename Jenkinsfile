@@ -10,12 +10,12 @@
 
 def buildNode = "rhel7-releng" // slave label
 def installNPM(){
-	def yarnVersion="1.17.3"
-	def nodeHome = tool 'nodejs-10.14.1'
-	env.PATH="${nodeHome}/bin:${env.PATH}"
-	sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
-	if ("${USE_PUBLIC_NEXUS}".equals("false")) {
-		sh '''#!/bin/bash -xe
+    def yarnVersion="1.17.3"
+    def nodeHome = tool 'nodejs-10.14.1'
+    env.PATH="${nodeHome}/bin:${env.PATH}"
+    sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
+    if ("${USE_PUBLIC_NEXUS}".equals("false")) {
+        sh '''#!/bin/bash -xe
 
 echo '
 registry=https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/
@@ -39,67 +39,67 @@ npm install --global yarn@''' + yarnVersion + '''
 npm config get; yarn config get list
 npm --version; yarn --version
 '''
-	}
-	else
-	{
-		sh '''#!/bin/bash -xe
+    }
+    else
+    {
+        sh '''#!/bin/bash -xe
 rm -f ${HOME}/.npmrc ${HOME}/.yarnrc
 npm install --global yarn@''' + yarnVersion + '''
 npm --version; yarn --version
 '''
-	}
+    }
 }
 
 timeout(180) {
-	node("${buildNode}"){
-		stage "Build CRW Theia --no-async-tests"
+    node("${buildNode}"){
+        stage "Build CRW Theia --no-async-tests"
 
-		cleanWs()
-		// for private repo, use checkout(credentialsId: 'devstudio-release')
-		checkout([$class: 'GitSCM', 
-			branches: [[name: "${branchToBuildCRW}"]], 
-			doGenerateSubmoduleConfigurations: false, 
-			poll: true,
-			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-			submoduleCfg: [], 
-			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-		installNPM()
+        cleanWs()
+        // for private repo, use checkout(credentialsId: 'devstudio-release')
+        checkout([$class: 'GitSCM', 
+            branches: [[name: "${branchToBuildCRW}"]], 
+            doGenerateSubmoduleConfigurations: false, 
+            poll: true,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+            submoduleCfg: [], 
+            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+        installNPM()
 
-		// CRW-360 use RH NPM mirror
-		// if ("${USE_PUBLIC_NEXUS}".equals("false")) {
-		// 	sh '''#!/bin/bash -xe 
-		// 	for d in $(find . -name yarn.lock -o -name package.json); do 
-		// 		sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
-		// 	'''
-		// }
+        // CRW-360 use RH NPM mirror
+        // if ("${USE_PUBLIC_NEXUS}".equals("false")) {
+        //     sh '''#!/bin/bash -xe 
+        //     for d in $(find . -name yarn.lock -o -name package.json); do 
+        //         sed -i $d 's|https://registry.yarnpkg.com/|https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org/|g'
+        //     '''
+        // }
 
-		// increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
-		// sh '''#!/bin/bash -xe 
-		// for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
-		// '''
+        // increase verbosity of yarn calls to we can log what's being downloaded from 3rd parties - doesn't work at this stage; must move into build.sh
+        // sh '''#!/bin/bash -xe 
+        // for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
+        // '''
 
-		// TODO pass che-theia and theia tags/branches to this script
-		def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
-		def buildStatusCode = 0
-		ansiColor('xterm') {
-			buildStatusCode = sh script:'''#!/bin/bash -xe
+        // TODO pass che-theia and theia tags/branches to this script
+        def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
+        def buildStatusCode = 0
+        ansiColor('xterm') {
+            buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
-	./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
+    ./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
 ''', returnStatus: true
 
-			stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
+            stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
 
-			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
+            archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
-			// TODO start collecting shas with "git rev-parse --short=4 HEAD"
-			def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
-			echo "${descriptString}"
-			currentBuild.description="${descriptString}"
+            // TODO start collecting shas with "git rev-parse --short=4 HEAD"
+            def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
+            echo "${descriptString}"
+            currentBuild.description="${descriptString}"
 
-			writeFile(file: 'project.rules', text:
+            writeFile(file: 'project.rules', text:
 '''
 # warnings/errors to ignore
 ok /Couldn't create directory: Failure/
@@ -132,27 +132,27 @@ error /not found: manifest unknown/
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
 ''')
-			try 
-			{
-				step([$class: 'LogParserPublisher',
-				failBuildOnError: true,
-				unstableOnWarning: false,
-				projectRulePath: 'project.rules',
-				useProjectRule: true])
-			}
-			catch (all)
-			{
-				print "ERROR: LogParserPublisher failed: \n" +al
-			}
+            try 
+            {
+                step([$class: 'LogParserPublisher',
+                failBuildOnError: true,
+                unstableOnWarning: false,
+                projectRulePath: 'project.rules',
+                useProjectRule: true])
+            }
+            catch (all)
+            {
+                print "ERROR: LogParserPublisher failed: \n" +al
+            }
 
-			def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
-			if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
-			{
-				error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
-				currentBuild.result = 'FAILED'
-			}
-		}
-	}
+            def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+            if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
+            {
+                error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
+                currentBuild.result = 'FAILED'
+            }
+        }
+    }
 }
 
 def SOURCE_BRANCH = "master"
@@ -172,22 +172,22 @@ def OLD_SHA3=""
 def SRC_SHA1=""
 
 timeout(120) {
-	node("${buildNode}"){ stage "Sync repos"
+    node("${buildNode}"){ stage "Sync repos"
 
     withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
         file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
-		checkout([$class: 'GitSCM', 
-			branches: [[name: "${branchToBuildCRW}"]], 
-			doGenerateSubmoduleConfigurations: false, 
-			poll: true,
-			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-			submoduleCfg: [], 
-			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+        checkout([$class: 'GitSCM', 
+            branches: [[name: "${branchToBuildCRW}"]], 
+            doGenerateSubmoduleConfigurations: false, 
+            poll: true,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+            submoduleCfg: [], 
+            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
 
-		// retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
-		unstash 'stashDockerfilesToSync' 
+        // retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
+        unstash 'stashDockerfilesToSync' 
 
-  	 	def BOOTSTRAP = '''#!/bin/bash -xe
+           def BOOTSTRAP = '''#!/bin/bash -xe
 
 # bootstrapping: if keytab is lost, upload to 
 # https://codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/credentials/store/system/domain/_/
@@ -273,11 +273,14 @@ done
       ''', returnStdout: true)
       println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
-  	 	sh BOOTSTRAP + '''
+           sh BOOTSTRAP + '''
+# TODO should this be a branch instead of just master?
+CRW_VERSION=`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`
+
 for targetN in target1 target2 target3; do
     if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
     if [[ \$targetN == "target2" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT2 + '''"; fi
-	# special case since folder created != quay image
+    # special case since folder created != quay image
     if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/theia-endpoint-runtime-binary"; fi
     # rsync files in github to dist-git
     SYNC_FILES="src"
@@ -292,21 +295,22 @@ for targetN in target1 target2 target3; do
     fi
     done
 
-    # apply changes from upstream che-pluginbroker/build/*/rhel.Dockerfile to downstream Dockerfile
+    # apply changes from upstream Dockerfile to downstream Dockerfile
+    find ${SRC_PATH} -name "*ockerfile*"
     SOURCEDOCKERFILE="${SRC_PATH}/Dockerfile"
     TARGETDOCKERFILE=""
     if [[ \$targetN == "target1" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target1/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT1 + '''"; fi
     if [[ \$targetN == "target2" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target2/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT2 + '''"; fi
     if [[ \$targetN == "target3" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target3/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT3 + '''"; fi
 
-    # TODO should this be a branch instead of just master?
-    CRW_VERSION=`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`
     #apply patches
-    if [[ ${SOURCEDOCKERFILE} != "" ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
+    if [[ ${SOURCEDOCKERFILE} != "" ]] && [[ -f ${SOURCEDOCKERFILE} ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
       sed ${SOURCEDOCKERFILE} \
         -e "s#FROM registry.redhat.io/#FROM #g" \
         -e "s#FROM registry.access.redhat.com/#FROM #g" \
         > ${TARGETDOCKERFILE}
+    else
+        echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
     fi
 
     # push changes in github to dist-git
@@ -330,7 +334,7 @@ for targetN in target1 target2 target3; do
     if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
     cd ..
 done
-		  '''
+          '''
     }
 
       def NEW_SHA1 = sh(script: '''#!/bin/bash -xe
@@ -348,140 +352,140 @@ done
       ''', returnStdout: true)
       println "Got NEW_SHA3 in target3 folder: " + NEW_SHA3
 
-	  if (NEW_SHA1.equals(OLD_SHA1) && NEW_SHA2.equals(OLD_SHA2) && NEW_SHA3.equals(OLD_SHA3)) {
-	    currentBuild.result='UNSTABLE'
-	  }
-	}
+      if (NEW_SHA1.equals(OLD_SHA1) && NEW_SHA2.equals(OLD_SHA2) && NEW_SHA3.equals(OLD_SHA3)) {
+        currentBuild.result='UNSTABLE'
+      }
+    }
 }
 
 timeout(180) {
     node("${buildNode}"){
        stage "rhpkg container-builds"
 
-		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
+        def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
-		def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-		def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+        def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+        def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
-		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
-		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+        echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+        "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
-		// trigger OSBS build
-		build(
-		  job: 'get-sources-rhpkg-container-build',
-		  wait: false,
-		  propagate: true,
-		  parameters: [
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_PATHs',
-			  value: "containers/codeready-workspaces-theia-dev",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_BRANCH',
-			  value: "crw-2.0-rhel-8",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'QUAY_REPO_PATHs',
-			  value: "${QUAY_REPO_PATHs}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'SCRATCH',
-			  value: "${SCRATCH}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'JOB_BRANCH',
-			  value: "${JOB_BRANCH}",
-			]
-		  ]
-		)
+        // trigger OSBS build
+        build(
+          job: 'get-sources-rhpkg-container-build',
+          wait: false,
+          propagate: true,
+          parameters: [
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_PATHs',
+              value: "containers/codeready-workspaces-theia-dev",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_BRANCH',
+              value: "crw-2.0-rhel-8",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'QUAY_REPO_PATHs',
+              value: "${QUAY_REPO_PATHs}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'SCRATCH',
+              value: "${SCRATCH}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'JOB_BRANCH',
+              value: "${JOB_BRANCH}",
+            ]
+          ]
+        )
 
-		QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
+        QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
 
-		matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-		JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+        matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+        JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
-		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
-		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+        echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+        "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
-		// trigger OSBS build
-		build(
-		  job: 'get-sources-rhpkg-container-build',
-		  wait: false,
-		  propagate: true,
-		  parameters: [
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_PATHs',
-			  value: "containers/codeready-workspaces-theia",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_BRANCH',
-			  value: "crw-2.0-rhel-8",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'QUAY_REPO_PATHs',
-			  value: "${QUAY_REPO_PATHs}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'SCRATCH',
-			  value: "${SCRATCH}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'JOB_BRANCH',
-			  value: "${JOB_BRANCH}",
-			]
-		  ]
-		)
+        // trigger OSBS build
+        build(
+          job: 'get-sources-rhpkg-container-build',
+          wait: false,
+          propagate: true,
+          parameters: [
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_PATHs',
+              value: "containers/codeready-workspaces-theia",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_BRANCH',
+              value: "crw-2.0-rhel-8",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'QUAY_REPO_PATHs',
+              value: "${QUAY_REPO_PATHs}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'SCRATCH',
+              value: "${SCRATCH}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'JOB_BRANCH',
+              value: "${JOB_BRANCH}",
+            ]
+          ]
+        )
 
-		QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
+        QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
 
-		matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-		JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
+        matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
+        JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
 
-		echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
-		"with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
+        echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
+        "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
-		// trigger OSBS build
-		build(
-		  job: 'get-sources-rhpkg-container-build',
-		  wait: false,
-		  propagate: true,
-		  parameters: [
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_PATHs',
-			  value: "containers/codeready-workspaces-theia-endpoint",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'GIT_BRANCH',
-			  value: "crw-2.0-rhel-8",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'QUAY_REPO_PATHs',
-			  value: "${QUAY_REPO_PATHs}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'SCRATCH',
-			  value: "${SCRATCH}",
-			],
-			[
-			  $class: 'StringParameterValue',
-			  name: 'JOB_BRANCH',
-			  value: "${JOB_BRANCH}",
-			]
-		  ]
-		)
-	}
+        // trigger OSBS build
+        build(
+          job: 'get-sources-rhpkg-container-build',
+          wait: false,
+          propagate: true,
+          parameters: [
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_PATHs',
+              value: "containers/codeready-workspaces-theia-endpoint",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'GIT_BRANCH',
+              value: "crw-2.0-rhel-8",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'QUAY_REPO_PATHs',
+              value: "${QUAY_REPO_PATHs}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'SCRATCH',
+              value: "${SCRATCH}",
+            ],
+            [
+              $class: 'StringParameterValue',
+              name: 'JOB_BRANCH',
+              value: "${JOB_BRANCH}",
+            ]
+          ]
+        )
+    }
 }
