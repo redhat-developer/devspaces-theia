@@ -277,7 +277,8 @@ done
 for targetN in target1 target2 target3; do
     if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
     if [[ \$targetN == "target2" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT2 + '''"; fi
-    if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT3 + '''"; fi
+	# special case since folder created != quay image
+    if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/theia-endpoint-runtime-binary"; fi
     # rsync files in github to dist-git
     SYNC_FILES="src"
     for d in ${SYNC_FILES}; do
