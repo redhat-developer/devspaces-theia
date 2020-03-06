@@ -4,11 +4,11 @@
 // branchToBuildCRW = codeready-workspaces branch to build: */2.0.x or */master
 // THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.12.0
 // CHE_THEIA_BRANCH = che-theia branch to build: master, 7.3.2, 7.3.3
-// node == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram||rhel7-devstudio-releng||rhel7 or rhel7-32gb||rhel7-16gb||rhel7-8gb
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
+def buildNode = "rhel7-releng" // slave label
 def installNPM(){
 	def yarnVersion="1.17.3"
 	def nodeHome = tool 'nodejs-10.14.1'
@@ -51,7 +51,7 @@ npm --version; yarn --version
 }
 
 timeout(180) {
-	node("${node}"){
+	node("${buildNode}"){
 		stage "Build CRW Theia --no-async-tests"
 
 		cleanWs()
@@ -90,14 +90,9 @@ pushd ${WORKSPACE}/crw-theia >/dev/null
 popd >/dev/null
 ''', returnStatus: true
 
-			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "\
-				crw-theia/dockerfiles/**/*, \
-				crw-theia/dockerfiles/**/**/*, \
-				crw-theia/dockerfiles/**/**/**/*, \
-				crw-theia/dockerfiles/**/**/**/**/*, \
-				crw-theia/dockerfiles/**/**/**/**/**/*, \
-				crw-theia/dockerfiles/**/**/**/**/**/**/*, \
-				logs/*"
+			stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
+
+			archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
 			// TODO start collecting shas with "git rev-parse --short=4 HEAD"
 			def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
@@ -132,6 +127,7 @@ error /error exit delayed from previous errors/
 error /tar: .+: No such file or directory/
 error /syntax error/
 error /fatal: Remote branch/
+error /not found: manifest unknown/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
@@ -158,9 +154,207 @@ error /(?i)^error /
 		}
 	}
 }
- 
+
+def SOURCE_BRANCH = "master"
+def SOURCE_REPO = "redhat-developer/codeready-workspaces-theia" //source repo from which to find and sync commits to pkgs.devel repo 
+def GIT_PATH1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to use as target
+def GIT_PATH2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
+def GIT_PATH3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
+
+def GIT_BRANCH = "crw-2.0-rhel-8" // target branch in dist-git repo, eg., crw-2.0-rhel-8
+def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
+def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
+def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
+
+def OLD_SHA1=""
+def OLD_SHA2=""
+def OLD_SHA3=""
+def SRC_SHA1=""
+
+timeout(120) {
+	node("${buildNode}"){ stage "Sync repos"
+
+    withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
+        file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
+		checkout([$class: 'GitSCM', 
+			branches: [[name: "${branchToBuildCRW}"]], 
+			doGenerateSubmoduleConfigurations: false, 
+			poll: true,
+			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+			submoduleCfg: [], 
+			userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+
+		// retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
+		unstash 'stashDockerfilesToSync' 
+
+  	 	def BOOTSTRAP = '''#!/bin/bash -xe
+
+# bootstrapping: if keytab is lost, upload to 
+# https://codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/credentials/store/system/domain/_/
+# then set Use secret text above and set Bindings > Variable (path to the file) as ''' + CRW_KEYTAB + '''
+chmod 700 ''' + CRW_KEYTAB + ''' && chown ''' + USER + ''' ''' + CRW_KEYTAB + '''
+# create .k5login file
+echo "crw-build/codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com@REDHAT.COM" > ~/.k5login
+chmod 644 ~/.k5login && chown ''' + USER + ''' ~/.k5login
+ echo "pkgs.devel.redhat.com,10.19.208.80 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAplqWKs26qsoaTxvWn3DFcdbiBxqRLhFngGiMYhbudnAj4li9/VwAJqLm1M6YfjOoJrj9dlmuXhNzkSzvyoQODaRgsjCG5FaRjuN8CSM/y+glgCYsWX1HFZSnAasLDuW0ifNLPR2RBkmWx61QKq+TxFDjASBbBywtupJcCsA5ktkjLILS+1eWndPJeSUJiOtzhoN8KIigkYveHSetnxauxv1abqwQTk5PmxRgRt20kZEFSRqZOJUlcl85sZYzNC/G7mneptJtHlcNrPgImuOdus5CW+7W49Z/1xqqWI/iRjwipgEMGusPMlSzdxDX4JzIx6R53pDpAwSAQVGDz4F9eQ==
+" >> ~/.ssh/known_hosts
+
+ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+
+# see https://mojo.redhat.com/docs/DOC-1071739
+if [[ -f ~/.ssh/config ]]; then mv -f ~/.ssh/config{,.BAK}; fi
+echo "
+GSSAPIAuthentication yes
+GSSAPIDelegateCredentials yes
+
+Host pkgs.devel.redhat.com
+User crw-build/codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com@REDHAT.COM
+" > ~/.ssh/config
+chmod 600 ~/.ssh/config
+
+# initialize kerberos
+export KRB5CCNAME=/var/tmp/crw-build_ccache
+kinit "crw-build/codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com@REDHAT.COM" -kt ''' + CRW_KEYTAB + '''
+klist # verify working
+
+hasChanged=0
+
+# REQUIRE: skopeo
+curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+chmod +x /tmp/updateBaseImages.sh 
+cd ${WORKSPACE}/crw-theia
+  git checkout --track origin/''' + branchToBuildCRW + ''' || true
+  export GITHUB_TOKEN=''' + GITHUB_TOKEN + ''' # echo "''' + GITHUB_TOKEN + '''"
+  git config user.email "nickboldt+devstudio-release@gmail.com"
+  git config user.name "Red Hat Devstudio Release Bot"
+  git config --global push.default matching
+  OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
+
+  # TODO later we can enable updating the sources in crw-theia repo via this step, but would also need to check our sources again and work in 
+  #/tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${WORKSPACE}/crw-theia/conf -f builder-image-from.dockerfile
+  #/tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${WORKSPACE}/crw-theia/conf -f runtime-from.dockerfile
+  #/tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${WORKSPACE}/crw-theia -f Dockerfile
+  #NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
+  #if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
+cd ..
+for targetN in target1 target2 target3; do
+    # fetch sources to be updated
+    if [[ \$targetN == "target1" ]]; then GIT_PATH="''' + GIT_PATH1 + '''"; fi
+    if [[ \$targetN == "target2" ]]; then GIT_PATH="''' + GIT_PATH2 + '''"; fi
+    if [[ \$targetN == "target3" ]]; then GIT_PATH="''' + GIT_PATH3 + '''"; fi
+    if [[ ! -d ${WORKSPACE}/${targetN} ]]; then git clone ssh://crw-build@pkgs.devel.redhat.com/${GIT_PATH} ${targetN}; fi
+    cd ${WORKSPACE}/${targetN}
+    git checkout --track origin/''' + GIT_BRANCH + ''' || true
+    git config user.email crw-build@REDHAT.COM
+    git config user.name "CRW Build"
+    git config --global push.default matching
+    cd ..
+done
+'''
+      sh BOOTSTRAP
+
+      SRC_SHA1 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/crw-theia; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got SRC_SHA1 in sources folder: " + SRC_SHA1
+
+      OLD_SHA1 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target1; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got OLD_SHA1 in target1 folder: " + OLD_SHA1
+
+      OLD_SHA2 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target2; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got OLD_SHA2 in target2 folder: " + OLD_SHA2
+
+      OLD_SHA3 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target3; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
+
+  	 	sh BOOTSTRAP + '''
+for targetN in target1 target2 target3; do
+    if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
+    if [[ \$targetN == "target2" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT2 + '''"; fi
+    if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT3 + '''"; fi
+    # rsync files in github to dist-git
+    SYNC_FILES="src"
+    for d in ${SYNC_FILES}; do
+    if [[ -f ${SRC_PATH}/${d} ]]; then 
+        rsync -zrlt ${SRC_PATH}/${d} ${WORKSPACE}/${targetN}/${d}
+    elif [[ -d ${SRC_PATH}/${d} ]]; then
+        # copy over the files 
+        rsync -zrlt ${SRC_PATH}/${d}/* ${WORKSPACE}/${targetN}/${d}/
+        # sync the directory and delete from target if deleted from source 
+        rsync -zrlt --delete ${SRC_PATH}/${d}/ ${WORKSPACE}/${targetN}/${d}/ 
+    fi
+    done
+
+    # apply changes from upstream che-pluginbroker/build/*/rhel.Dockerfile to downstream Dockerfile
+    SOURCEDOCKERFILE="${SRC_PATH}/Dockerfile"
+    TARGETDOCKERFILE=""
+    if [[ \$targetN == "target1" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target1/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT1 + '''"; fi
+    if [[ \$targetN == "target2" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target2/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT2 + '''"; fi
+    if [[ \$targetN == "target3" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target3/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT3 + '''"; fi
+
+    # TODO should this be a branch instead of just master?
+    CRW_VERSION=`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`
+    #apply patches
+    if [[ ${SOURCEDOCKERFILE} != "" ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
+      sed ${SOURCEDOCKERFILE} \
+        -e "s#FROM registry.redhat.io/#FROM #g" \
+        -e "s#FROM registry.access.redhat.com/#FROM #g" \
+        > ${TARGETDOCKERFILE}
+    fi
+
+    # push changes in github to dist-git
+    cd ${WORKSPACE}/${targetN}
+    if [[ \$(git diff --name-only) ]]; then # file changed
+    OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
+    git add Dockerfile ${SYNC_FILES}
+    git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" Dockerfile ${SYNC_FILES}
+    git push origin ''' + GIT_BRANCH + '''
+    NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
+    if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
+    echo "[sync] Updated pkgs.devel @ ${NEW_SHA:0:8} from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}"
+    fi
+    cd ..
+
+    # update base image
+    cd ${WORKSPACE}/${targetN}
+    OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
+    /tmp/updateBaseImages.sh -b ''' + GIT_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/}
+    NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
+    if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
+    cd ..
+done
+		  '''
+    }
+
+      def NEW_SHA1 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target1; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got NEW_SHA1 in target1 folder: " + NEW_SHA1
+
+      def NEW_SHA2 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target2; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got NEW_SHA2 in target2 folder: " + NEW_SHA2
+
+      def NEW_SHA3 = sh(script: '''#!/bin/bash -xe
+      cd ${WORKSPACE}/target3; git rev-parse HEAD
+      ''', returnStdout: true)
+      println "Got NEW_SHA3 in target3 folder: " + NEW_SHA3
+
+	  if (NEW_SHA1.equals(OLD_SHA1) && NEW_SHA2.equals(OLD_SHA2) && NEW_SHA3.equals(OLD_SHA3)) {
+	    currentBuild.result='UNSTABLE'
+	  }
+	}
+}
+
 timeout(180) {
-    node("${node}"){
+    node("${buildNode}"){
        stage "rhpkg container-builds"
 
 		def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
