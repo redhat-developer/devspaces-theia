@@ -326,7 +326,7 @@ handle_che_theia() {
   # workaround for building the endpoint
   # seems that this stage creates quay.io/crw/theia-rhel8:next but
   # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
-  docker tag "${TMP_THEIA_BUILDER_IMAGE}" eclipse/che-theia:next
+  docker tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next
 }
 
 # now do che-theia-endpoint-runtime-binary
