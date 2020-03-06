@@ -228,10 +228,9 @@ handle_che_theia_dev() {
   docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 
-  # workaround for building theia
-  # seems that this stage creates quay.io/crw/theia-dev-rhel8:next but
+  # this stage creates quay.io/crw/theia-dev-rhel8:next but
   # theia build stage wants eclipse/che-theia-dev:next
-  docker tag quay.io/crw/theia-dev-rhel8:next eclipse/che-theia-dev:next
+  # see above, where we docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
 }
 
 # now do che-theia
@@ -327,7 +326,7 @@ handle_che_theia() {
   # workaround for building the endpoint
   # seems that this stage creates quay.io/crw/theia-rhel8:next but
   # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
-  docker tag quay.io/crw/theia-rhel8:next eclipse/che-theia:next
+  docker tag "${TMP_THEIA_BUILDER_IMAGE}" eclipse/che-theia:next
 }
 
 # now do che-theia-endpoint-runtime-binary
