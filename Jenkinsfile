@@ -275,7 +275,7 @@ done
 
            sh BOOTSTRAP + '''
 # TODO should this be a branch instead of just master?
-CRW_VERSION=`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`
+CRW_VERSION="`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`"
 
 for targetN in target1 target2 target3; do
     if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
@@ -317,7 +317,7 @@ for targetN in target1 target2 target3; do
     cd ${WORKSPACE}/${targetN}
     if [[ \$(git diff --name-only) ]]; then # file changed
     OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-    for f in ${SYNC_FILES}; do; git add $f; done
+    for f in ${SYNC_FILES}; do git add $f; done
     git add Dockerfile
     git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" .
     git push origin ''' + GIT_BRANCH + '''
