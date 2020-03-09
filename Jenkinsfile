@@ -317,7 +317,13 @@ for targetN in target1 target2 target3; do
     cd ${WORKSPACE}/${targetN}
     if [[ \$(git diff --name-only) ]]; then # file changed
     OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-    for f in ${SYNC_FILES}; do git add $f; done
+    for f in ${SYNC_FILES}; do 
+      if [[ -f $f ]] || [[ -d $f ]]; then 
+        git add $f
+      else 
+        echo "[WARNING] File or folder ${WORKSPACE}/${targetN}/$f does not exist. Skipping!"
+      fi
+    done
     git add Dockerfile
     git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" .
     git push origin ''' + GIT_BRANCH + '''
