@@ -283,7 +283,7 @@ for targetN in target1 target2 target3; do
     # special case since folder created != quay image
     if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/theia-endpoint-runtime-binary"; fi
     # rsync files in github to dist-git
-    SYNC_FILES="src "
+    SYNC_FILES="src etc"
     for d in ${SYNC_FILES}; do
     if [[ -f ${SRC_PATH}/${d} ]]; then 
         rsync -zrlt ${SRC_PATH}/${d} ${WORKSPACE}/${targetN}/${d}
@@ -317,8 +317,9 @@ for targetN in target1 target2 target3; do
     cd ${WORKSPACE}/${targetN}
     if [[ \$(git diff --name-only) ]]; then # file changed
     OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-    git add Dockerfile ${SYNC_FILES}
-    git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" Dockerfile ${SYNC_FILES}
+    for f in ${SYNC_FILES}; do; git add $f; done
+    git add Dockerfile
+    git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" .
     git push origin ''' + GIT_BRANCH + '''
     NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
     if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
