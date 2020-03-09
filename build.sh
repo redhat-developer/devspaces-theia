@@ -230,7 +230,7 @@ handle_che_theia_dev() {
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  ls -la asset* *.gz
+  ls -la asset* *gz || true
   popd >/dev/null
 
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
@@ -330,7 +330,7 @@ handle_che_theia() {
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  ls -la asset* *.gz
+  ls -la asset* *gz || true
   popd >/dev/null
 
   # workaround for building the endpoint
@@ -395,7 +395,7 @@ handle_che_theia_endpoint_runtime_binary() {
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
-  ls -la asset* *.gz
+  ls -la asset* *gz || true
   popd >/dev/null
 }
 
