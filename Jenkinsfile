@@ -283,7 +283,7 @@ for targetN in target1 target2 target3; do
     # special case since folder created != quay image
     if [[ \$targetN == "target3" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/theia-endpoint-runtime-binary"; fi
     # rsync files in github to dist-git
-    SYNC_FILES="src"
+    SYNC_FILES="src "
     for d in ${SYNC_FILES}; do
     if [[ -f ${SRC_PATH}/${d} ]]; then 
         rsync -zrlt ${SRC_PATH}/${d} ${WORKSPACE}/${targetN}/${d}

@@ -228,6 +228,11 @@ handle_che_theia_dev() {
   docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
 
+  # list generated assets & tarballs
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
+  ls -la asset* *.gz
+  popd >/dev/null
+
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
   # theia build stage wants eclipse/che-theia-dev:next
   # see above, where we docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
@@ -323,6 +328,11 @@ handle_che_theia() {
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
   popd >/dev/null
 
+  # list generated assets & tarballs
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
+  ls -la asset* *.gz
+  popd >/dev/null
+
   # workaround for building the endpoint
   # seems that this stage creates quay.io/crw/theia-rhel8:next but
   # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
@@ -371,7 +381,9 @@ handle_che_theia_endpoint_runtime_binary() {
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
   # node
-  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
+  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} \
+    -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' \
+    > asset-node-src.tar.gz
   
   # Copy generate Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
@@ -379,6 +391,11 @@ handle_che_theia_endpoint_runtime_binary() {
   # build local
   docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+  popd >/dev/null
+
+  # list generated assets & tarballs
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
+  ls -la asset* *.gz
   popd >/dev/null
 }
 
