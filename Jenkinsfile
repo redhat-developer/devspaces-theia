@@ -307,7 +307,7 @@ for targetN in target1 target2 target3; do
     if [[ \$targetN == "target2" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target2/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT2 + '''"; fi
     if [[ \$targetN == "target3" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target3/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT3 + '''"; fi
 
-    #apply patches
+    # apply generic patches to convert source -> target dockerfile (for use in Brew)
     if [[ ${SOURCEDOCKERFILE} != "" ]] && [[ -f ${SOURCEDOCKERFILE} ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
       sed ${SOURCEDOCKERFILE} -r \
         `# cannot resolve RHCC from inside Brew so use no registry to resolve from Brew using same container name` \
@@ -320,6 +320,23 @@ for targetN in target1 target2 target3; do
         > ${TARGETDOCKERFILE}
     else
         echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
+    fi
+
+    # add special patches to convert theia bootstrap build into brew-compatible one
+    # TODO should this be in build.sh instead?
+    if [[ \$targetN == "target2" ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
+      sed -r \
+        `# fix up theia loader patch inclusion (3 steps)` \
+        -e "s#ADD branding/loader/loader.patch .+#COPY branding.zip /tmp/branding.zip#g" \
+        -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN unzip -d /tmp/ /tmp/branding.zip; cp /tmp/\\1#g" \
+        -e "s#(RUN cd ${HOME}/theia-source-code && git apply).+#\\1 /tmp/branding/loader/loader.patch; rm -f /tmp/branding/loader/loader.patch#g" \
+        `# don't create tarballs` \
+        -e "s#.+tar zcf.+##g" \
+        `# don't do node-gyp installs, etc.` \
+        -e "s#.+node-gyp.+##g" \
+        `# copy from builder` \
+        -e "s#^COPY branding #COPY --from=builder /tmp/branding #g" \
+        -i ${TARGETDOCKERFILE}
     fi
 
     # push changes in github to dist-git
