@@ -312,6 +312,8 @@ for targetN in target1 target2 target3; do
         -e "s#FROM registry.access.redhat.com/#FROM #g" \
         `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
         -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
+        `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
+        -e "s#(theia-.+):next#\\1:''' + CRW_VERSION + '''#g" \
         > ${TARGETDOCKERFILE}
     else
         echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
