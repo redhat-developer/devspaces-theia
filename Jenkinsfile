@@ -128,6 +128,7 @@ error /tar: .+: No such file or directory/
 error /syntax error/
 error /fatal: Remote branch/
 error /not found: manifest unknown/
+error /no space left on device/
 
 # match line starting with 'error ', case-insensitive
 error /(?i)^error /
