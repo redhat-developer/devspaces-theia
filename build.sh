@@ -222,7 +222,7 @@ handle_che_theia_dev() {
   # Copy generate Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
-  
+
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
   docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
@@ -231,6 +231,11 @@ handle_che_theia_dev() {
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
   ls -la asset* *gz || true
+  while IFS= read -r -d '' d; do
+    echo "==== ${d} ====>"
+    cat $d
+    echo "<====  ${d} ===="
+  done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   popd >/dev/null
 
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
@@ -319,6 +324,10 @@ handle_che_theia() {
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
+  # TODO: should we use the other Dockerfile?
+  cp "${DOCKERFILES_ROOT_DIR}"/theia/Dockerfile.ubi8-brew "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile.ubi8-brew
+  
+
   # Copy branding files
   cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   
@@ -331,6 +340,11 @@ handle_che_theia() {
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   ls -la asset* *gz || true
+  while IFS= read -r -d '' d; do
+    echo "==== ${d} ====>"
+    cat $d
+    echo "<====  ${d} ===="
+  done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   popd >/dev/null
 
   # workaround for building the endpoint
@@ -396,6 +410,11 @@ handle_che_theia_endpoint_runtime_binary() {
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   ls -la asset* *gz || true
+  while IFS= read -r -d '' d; do
+    echo "==== ${d} ====>"
+    cat $d
+    echo "<====  ${d} ===="
+  done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   popd >/dev/null
 }
 
