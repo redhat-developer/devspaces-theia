@@ -274,10 +274,13 @@ done
       ''', returnStdout: true)
       println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
-           sh BOOTSTRAP + '''
-# TODO should this be a branch instead of just master?
-CRW_VERSION="`wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION`"
+      // TODO should this be a branch instead of just master?
+      CRW_VERSION = sh(script: '''#!/bin/bash -xe
+      wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION
+      ''', returnStdout: true)
+      println "Got CRW_VERSION = " + CRW_VERSION
 
+           sh BOOTSTRAP + '''
 for targetN in target1 target2 target3; do
     if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
     if [[ \$targetN == "target2" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT2 + '''"; fi
