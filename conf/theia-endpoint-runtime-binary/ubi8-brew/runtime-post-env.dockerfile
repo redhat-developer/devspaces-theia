@@ -1,7 +1,7 @@
-ENV SUMMARY="Red Hat CodeReady Workspaces - Theia endpoint binary container" \
-    DESCRIPTION="Red Hat CodeReady Workspaces - Theia endpoint binary container" \
+ENV SUMMARY="Red Hat CodeReady Workspaces - theia-endpoint container" \
+    DESCRIPTION="Red Hat CodeReady Workspaces - theia-endpoint container" \
     PRODNAME="codeready-workspaces" \
-    COMPNAME="theia-endpoint-binary-rhel8" 
+    COMPNAME="theia-endpoint-rhel8" 
 
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \

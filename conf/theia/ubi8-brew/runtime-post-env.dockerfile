@@ -3,8 +3,8 @@ COPY branding ${HOME}/branding
 
 ENV YARN_FLAGS="--offline"
 
-ENV SUMMARY="Red Hat CodeReady Workspaces - Theia container" \
-    DESCRIPTION="Red Hat CodeReady Workspaces - Theia container" \
+ENV SUMMARY="Red Hat CodeReady Workspaces - theia container" \
+    DESCRIPTION="Red Hat CodeReady Workspaces - theia container" \
     PRODNAME="codeready-workspaces" \
     COMPNAME="theia-rhel8" \
     PRODUCT_JSON=${HOME}/branding/product.json

@@ -1,7 +1,7 @@
 ENV YARN_FLAGS="--offline"
 
-ENV SUMMARY="Red Hat CodeReady Workspaces - Theia-Dev container" \
-    DESCRIPTION="Red Hat CodeReady Workspaces - Theia-Dev container" \
+ENV SUMMARY="Red Hat CodeReady Workspaces - theia-dev container" \
+    DESCRIPTION="Red Hat CodeReady Workspaces - theia-dev container" \
     PRODNAME="codeready-workspaces" \
     COMPNAME="theia-dev-rhel8" 
 
