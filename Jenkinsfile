@@ -306,9 +306,12 @@ for targetN in target1 target2 target3; do
 
     #apply patches
     if [[ ${SOURCEDOCKERFILE} != "" ]] && [[ -f ${SOURCEDOCKERFILE} ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
-      sed ${SOURCEDOCKERFILE} \
+      sed ${SOURCEDOCKERFILE} -r \
+        `# cannot resolve RHCC from inside Brew so use no registry to resolve from Brew using same container name` \
         -e "s#FROM registry.redhat.io/#FROM #g" \
         -e "s#FROM registry.access.redhat.com/#FROM #g" \
+        `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
+        -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
         > ${TARGETDOCKERFILE}
     else
         echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
