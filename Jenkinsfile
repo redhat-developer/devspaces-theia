@@ -300,7 +300,7 @@ for targetN in target1 target2 target3; do
     done
 
     # apply changes from upstream Dockerfile to downstream Dockerfile
-    find ${SRC_PATH} -name "*ockerfile*"
+    find ${SRC_PATH} -name "*ockerfile*" || true
     SOURCEDOCKERFILE="${SRC_PATH}/Dockerfile"
     TARGETDOCKERFILE=""
     if [[ \$targetN == "target1" ]]; then TARGETDOCKERFILE="${WORKSPACE}/target1/Dockerfile"; QUAY_PROJECT="''' + QUAY_PROJECT1 + '''"; fi
