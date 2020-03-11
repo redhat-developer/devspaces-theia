@@ -278,7 +278,7 @@ done
       CRW_VERSION = sh(script: '''#!/bin/bash -xe
       wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION
       ''', returnStdout: true)
-      println "Got CRW_VERSION = " + CRW_VERSION
+      println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
            sh BOOTSTRAP + '''
 for targetN in target1 target2 target3; do
@@ -316,7 +316,7 @@ for targetN in target1 target2 target3; do
         `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
         -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
         `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
-        -e "s#(theia-.+):next#\\1:''' + CRW_VERSION + '''#g" \
+        -e "s#(theia-.+):next#\\1:''' + CRW_VERSION.trim() + '''#g" \
         > ${TARGETDOCKERFILE}
     else
         echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
