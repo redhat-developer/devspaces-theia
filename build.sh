@@ -324,22 +324,23 @@ handle_che_theia() {
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
-  # TODO: should we use the other Dockerfile?
-  cp "${DOCKERFILES_ROOT_DIR}"/theia/Dockerfile.ubi8-brew "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile.ubi8-brew
-  
-
   # Copy branding files
   cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
-  
+
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
   popd >/dev/null
 
+  # TODO: should we use the other Dockerfile? 
+  echo "-=-=-=- dockerfiles -=-=-=->"
+  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*"
+  echo "<-=-=-=- dockerfiles -=-=-=-"
+
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  ls -la asset* *gz || true
+  ls -laR asset* *gz theia/branding || true
   while IFS= read -r -d '' d; do
     echo "==== ${d} ====>"
     cat $d
