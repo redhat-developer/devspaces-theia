@@ -329,7 +329,7 @@ for targetN in target1 target2 target3; do
         `# fix up theia loader patch inclusion (3 steps)` \
         -e "s#ADD branding/loader/loader.patch .+#COPY branding.zip /tmp/branding.zip#g" \
         -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN unzip -d /tmp/ /tmp/branding.zip; cp /tmp/\\1#g" \
-        -e "s#(RUN cd ${HOME}/theia-source-code && git apply).+#\\1 /tmp/branding/loader/loader.patch; rm -f /tmp/branding/loader/loader.patch#g" \
+        -e "s#(RUN cd .+/theia-source-code && git apply).+#\\1 /tmp/branding/loader/loader.patch#g" \
         `# don't create tarballs` \
         -e "s#.+tar zcf.+##g" \
         `# don't do node-gyp installs, etc.` \
