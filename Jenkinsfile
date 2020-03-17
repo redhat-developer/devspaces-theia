@@ -173,7 +173,9 @@ def OLD_SHA3=""
 def SRC_SHA1=""
 
 timeout(120) {
-    node("${buildNode}"){ stage "Sync repos"
+  node("${buildNode}"){ stage "Sync repos"
+
+    if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
     withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
         file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
@@ -388,12 +390,17 @@ done
       if (NEW_SHA1.equals(OLD_SHA1) && NEW_SHA2.equals(OLD_SHA2) && NEW_SHA3.equals(OLD_SHA3)) {
         currentBuild.result='UNSTABLE'
       }
+    } else {
+      echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
     }
+  }
 }
 
 timeout(180) {
-    node("${buildNode}"){
-       stage "rhpkg container-builds"
+  node("${buildNode}"){
+    stage "rhpkg container-builds"
+
+    if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
@@ -520,5 +527,8 @@ timeout(180) {
             ]
           ]
         )
+    } else {
+      echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
     }
+  }
 }

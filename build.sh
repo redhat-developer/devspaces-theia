@@ -230,12 +230,12 @@ handle_che_theia_dev() {
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  ls -la asset* *gz || true
   while IFS= read -r -d '' d; do
     echo "==== ${d} ====>"
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
+  ls -laR asset* *gz || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev - build must exit!"
   popd >/dev/null
 
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
@@ -333,19 +333,20 @@ handle_che_theia() {
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
   popd >/dev/null
 
-  # TODO: should we use the other Dockerfile? 
+  # TODO: should we use some other Dockerfile? 
   echo "-=-=-=- dockerfiles -=-=-=->"
-  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*"
+  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | egrep -v "alpine|e2e"
   echo "<-=-=-=- dockerfiles -=-=-=-"
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  ls -laR asset* *gz theia/branding || true
   while IFS= read -r -d '' d; do
     echo "==== ${d} ====>"
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
+  # check branding folder too
+  ls -laR asset* *gz branding || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia - build must exit!"
   popd >/dev/null
 
   # workaround for building the endpoint
@@ -410,12 +411,12 @@ handle_che_theia_endpoint_runtime_binary() {
 
   # list generated assets & tarballs
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
-  ls -la asset* *gz || true
   while IFS= read -r -d '' d; do
     echo "==== ${d} ====>"
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
+  ls -laR asset* *gz || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia-endpoint-runtime-binary - build must exit!"
   popd >/dev/null
 }
 
