@@ -333,6 +333,11 @@ handle_che_theia() {
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
   popd >/dev/null
 
+  # Set the CDN options inside the docker file
+  sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile -r \
+      -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' \
+      -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#'
+
   # TODO: should we use some other Dockerfile? 
   echo "-=-=-=- dockerfiles -=-=-=->"
   find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | egrep -v "alpine|e2e"
