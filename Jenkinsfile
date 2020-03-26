@@ -56,13 +56,6 @@ timeout(180) {
 
         cleanWs()
         // for private repo, use checkout(credentialsId: 'devstudio-release')
-        checkout([$class: 'GitSCM', 
-            branches: [[name: "${branchToBuildCRW}"]], 
-            doGenerateSubmoduleConfigurations: false, 
-            poll: true,
-            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-            submoduleCfg: [], 
-            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
         // check out che-theia before we need it in build.sh so we can use it as a poll basis -- check for changes in che-theia to make this job fire automatically!
         sh "mkdir -p tmp"
         checkout([$class: 'GitSCM', 
@@ -75,6 +68,13 @@ timeout(180) {
             ], 
             submoduleCfg: [], 
             userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
+        checkout([$class: 'GitSCM', 
+            branches: [[name: "${branchToBuildCRW}"]], 
+            doGenerateSubmoduleConfigurations: false, 
+            poll: true,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+            submoduleCfg: [], 
+            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
         installNPM()
 
         // CRW-360 use RH NPM mirror
