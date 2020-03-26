@@ -3,7 +3,7 @@
 // PARAMETERS for this pipeline:
 // branchToBuildCRW = codeready-workspaces branch to build: */2.0.x or */master
 // THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.12.0
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.3.2, 7.3.3
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.9.x
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
@@ -63,6 +63,18 @@ timeout(180) {
             extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
             submoduleCfg: [], 
             userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+        // check out che-theia before we need it in build.sh so we can use it as a poll basis -- check for changes in che-theia to make this job fire automatically!
+        sh "mkdir -p tmp"
+        checkout([$class: 'GitSCM', 
+            branches: [[name: "${CHE_THEIA_BRANCH}"]], 
+            doGenerateSubmoduleConfigurations: false, 
+            poll: true,
+            extensions: [
+              [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
+              [$class: 'CloneOption', shallow: true, depth: 1]
+            ], 
+            submoduleCfg: [], 
+            userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
         installNPM()
 
         // CRW-360 use RH NPM mirror
@@ -186,7 +198,6 @@ timeout(120) {
             extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
             submoduleCfg: [], 
             userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-
         // retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
         unstash 'stashDockerfilesToSync' 
 

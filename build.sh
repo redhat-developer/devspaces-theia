@@ -109,6 +109,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
   if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
+    # if already checked out by Jenkinsfile, delete and start over
+    rm -fr "${TMP_DIR}"/che-theia
     git clone -b "${CHE_THEIA_BRANCH%%@*}" --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH%%@*} !"; exit 1; fi 
     pushd "${TMP_DIR}"/che-theia >/dev/null
@@ -122,7 +124,10 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       fi
     popd >/dev/null
   else # clone from tag/branch
-    git clone -b "${CHE_THEIA_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    # if already checked out by Jenkinsfile, use that folder
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then
+      git clone -b "${CHE_THEIA_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    fi
     if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
   fi
   
