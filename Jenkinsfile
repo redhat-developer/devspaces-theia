@@ -105,6 +105,9 @@ timeout(180) {
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
+# reuse already-checked-out sources from earlier stage
+mkdir -p ${WORKSPACE}/crw-theia/tmp; mv ${WORKSPACE}/tmp/che-theia ${WORKSPACE}/crw-theia/tmp/che-theia
+
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
     ./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
