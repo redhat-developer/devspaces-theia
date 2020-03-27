@@ -52,38 +52,34 @@ npm --version; yarn --version
 
 timeout(20) {
     node("${buildNode}"){
-        // check out che-theia before we need it in build.sh so we can use it as a poll basis -- check for changes in che-theia to make this job fire automatically!
+        // check out che-theia before we need it in build.sh so we can use it as a poll basis
+        // then discard this folder as we need to check them out and massage them for crw
         stage "Checkout Che Theia"
         sh "mkdir -p tmp"
-        checkout(
-          [$class: 'GitSCM', 
-            branches: [[name: "${CHE_THEIA_BRANCH}"]], 
-            doGenerateSubmoduleConfigurations: false, 
-            poll: true,
-            extensions: [
-              [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
-              [$class: 'CloneOption', shallow: true, depth: 1]
-            ], 
-            submoduleCfg: [], 
-            userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]]
-        )
-        stash name: 'stashCheTheia', includes: findFiles(glob: 'tmp/**').join(", ")
+        checkout([$class: 'GitSCM', 
+          branches: [[name: "${CHE_THEIA_BRANCH}"]], 
+          doGenerateSubmoduleConfigurations: false, 
+          poll: true,
+          extensions: [
+            [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
+            [$class: 'CloneOption', shallow: true, depth: 1]
+          ], 
+          submoduleCfg: [], 
+          userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
+        sh "rm -fr tmp"
     }
 }
 timeout(180) {
     node("${buildNode}"){
         stage "Build CRW Theia --no-async-tests"
         cleanWs()
-        unstash 'stashCheTheia'
-        checkout(
-          [$class: 'GitSCM', 
-            branches: [[name: "${branchToBuildCRW}"]], 
-            doGenerateSubmoduleConfigurations: false, 
-            poll: true,
-            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-            submoduleCfg: [], 
-            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]]
-        )
+        checkout([$class: 'GitSCM', 
+          branches: [[name: "${branchToBuildCRW}"]], 
+          doGenerateSubmoduleConfigurations: false, 
+          poll: true,
+          extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+          submoduleCfg: [], 
+          userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
         installNPM()
 
         // CRW-360 use RH NPM mirror
@@ -105,9 +101,6 @@ timeout(180) {
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
-# reuse already-checked-out sources from earlier stage
-mkdir -p ${WORKSPACE}/crw-theia/tmp; mv ${WORKSPACE}/tmp/che-theia ${WORKSPACE}/crw-theia/tmp/che-theia
-
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
     ./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
