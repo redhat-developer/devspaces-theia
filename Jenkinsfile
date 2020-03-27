@@ -57,26 +57,36 @@ timeout(180) {
         cleanWs()
         // for private repo, use checkout(credentialsId: 'devstudio-release')
         // check out che-theia before we need it in build.sh so we can use it as a poll basis -- check for changes in che-theia to make this job fire automatically!
-        sh "mkdir -p tmp"
-        checkout(
-          [$class: 'GitSCM', 
-            branches: [[name: "${CHE_THEIA_BRANCH}"]], 
-            doGenerateSubmoduleConfigurations: false, 
-            poll: true,
-            extensions: [
-              [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
-              [$class: 'CloneOption', shallow: true, depth: 1]
-            ], 
-            submoduleCfg: [], 
-            userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]],
-          [$class: 'GitSCM', 
-            branches: [[name: "${branchToBuildCRW}"]], 
-            doGenerateSubmoduleConfigurations: false, 
-            poll: true,
-            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-            submoduleCfg: [], 
-            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]]
-        )
+        steps {
+          parallel {
+            stage("Checkout che-theia"){
+              sh "mkdir -p tmp"
+              checkout(
+                [$class: 'GitSCM', 
+                  branches: [[name: "${CHE_THEIA_BRANCH}"]], 
+                  doGenerateSubmoduleConfigurations: false, 
+                  poll: true,
+                  extensions: [
+                    [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
+                    [$class: 'CloneOption', shallow: true, depth: 1]
+                  ], 
+                  submoduleCfg: [], 
+                  userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]]
+              )
+            }
+            stage("Checkout crw-theia"){
+              checkout(
+                [$class: 'GitSCM', 
+                  branches: [[name: "${branchToBuildCRW}"]], 
+                  doGenerateSubmoduleConfigurations: false, 
+                  poll: true,
+                  extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+                  submoduleCfg: [], 
+                  userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]]
+              )
+            }
+          }
+        }
         installNPM()
 
         // CRW-360 use RH NPM mirror
