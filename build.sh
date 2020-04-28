@@ -204,7 +204,7 @@ handle_che_theia_dev() {
   echo "Remove previous assets"
   rm -rf assets-*
   # copy assets
-  cp "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* .
+  cp -r "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* .
   # Copy src
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
