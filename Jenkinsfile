@@ -179,7 +179,7 @@ def GIT_PATH1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to 
 def GIT_PATH2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
 def GIT_PATH3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
 
-def GIT_BRANCH = "crw-2.0-rhel-8" // target branch in dist-git repo, eg., crw-2.0-rhel-8
+def GIT_BRANCH = "crw-2.2-rhel-8" // target branch in dist-git repo, eg., crw-2.2-rhel-8
 def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
 def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
 def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
@@ -440,7 +440,7 @@ timeout(180) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.0-rhel-8",
+              value: "crw-2.2-rhel-8",
             ],
             [
               $class: 'StringParameterValue',
@@ -482,7 +482,7 @@ timeout(180) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.0-rhel-8",
+              value: "crw-2.2-rhel-8",
             ],
             [
               $class: 'StringParameterValue',
@@ -524,7 +524,7 @@ timeout(180) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.0-rhel-8",
+              value: "crw-2.2-rhel-8",
             ],
             [
               $class: 'StringParameterValue',
