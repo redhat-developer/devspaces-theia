@@ -25,7 +25,7 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO [options] 
 
 Example:
-  $0 --ctb 7.9.0 --tb crw-2.1.0.rc1 --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache 
+  $0 --ctb 7.12.x --tb crw-2.2.0.9bc52ad --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache 
   $0 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
 
 Options: 
