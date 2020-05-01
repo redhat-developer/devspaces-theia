@@ -338,8 +338,7 @@ for targetN in target1 target2 target3; do
         -e "s#(theia-.+):next#\\1:''' + CRW_VERSION.trim() + '''#g" \
         > ${TARGETDOCKERFILE}
     else
-        echo "[ERROR] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
-        exit 1
+        echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
     fi
 
     # add special patches to convert theia bootstrap build into brew-compatible one
