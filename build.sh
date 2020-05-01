@@ -182,7 +182,8 @@ handle_che_theia_dev() {
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
   docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  # For use in default
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
+# For use in default
   docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
   popd >/dev/null
   
@@ -230,6 +231,7 @@ handle_che_theia_dev() {
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
   docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_DEV_IMAGE_NAME} failed." exit 1; fi
   popd >/dev/null
 
   # list generated assets & tarballs
@@ -261,9 +263,11 @@ handle_che_theia() {
   # Create one image for builder
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
   # and create runtime image as well
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -342,6 +346,7 @@ handle_che_theia() {
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed." exit 1; fi
   popd >/dev/null
 
   # Set the CDN options inside the docker file
@@ -386,6 +391,7 @@ handle_che_theia_endpoint_runtime_binary() {
   # Create one image for builder target
   docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
   popd >/dev/null
 
   # Create image theia-endpoint-runtime-binary:ubi8-brew
@@ -426,6 +432,7 @@ handle_che_theia_endpoint_runtime_binary() {
   # build local
   docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} failed." exit 1; fi
   popd >/dev/null
 
   # list generated assets & tarballs
