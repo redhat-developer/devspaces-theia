@@ -211,15 +211,15 @@ handle_che_theia_dev() {
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
   
   # Create asset with yarn cache
-  # /usr/local/share/.cache/yarn/v4 = yarn cache dir
+  # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
-    /usr/local/share/.cache/yarn \
-    /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global || true'
-  docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar --ignore-failed-read --verify -pzcf - \
-    /usr/local/share/.cache/yarn/v4 \
+  # docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
+  #   /usr/local/share/.cache/yarn/v*/ \
+  #   /home/theia-dev/.yarn-global \
+  #   /opt/app-root/src/.npm-global || true'
+  docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
+    /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
   popd >/dev/null
@@ -289,15 +289,15 @@ handle_che_theia() {
   cp "${CHE_THEIA_DIR}"/dockerfiles/theia/asset-* .
 
   # npm/yarn cache
-  # /usr/local/share/.cache/yarn/v4 = yarn cache dir
+  # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
-    /usr/local/share/.cache/yarn \
-    /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global || true'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar --ignore-failed-read --verify -pzcf - \
-    /usr/local/share/.cache/yarn/v4 \
+  # docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
+  #   /usr/local/share/.cache/yarn/v*/ \
+  #   /home/theia-dev/.yarn-global \
+  #   /opt/app-root/src/.npm-global || true'
+  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
+    /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tar.gz
   
@@ -307,7 +307,7 @@ handle_che_theia() {
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la /tmp/vscode-ripgrep-cache*'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar --ignore-failed-read --verify -pzcf - \
+  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
     /home/theia-dev/theia-source-code/packages/debug-nodejs/download  \
     /tmp/vscode-ripgrep-cache-* \
     /home/theia-dev/theia-source-code/plugins/  \
@@ -323,13 +323,13 @@ handle_che_theia() {
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
 
   # npm/yarn cache
-  # /usr/local/share/.cache/yarn/v4 = yarn cache dir
+  # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /opt/app-root/src/.npm-global = npm global
-  docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
-    /usr/local/share/.cache/yarn \
-    /opt/app-root/src/.npm-global || true'
-  docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar --ignore-failed-read --verify -pzcf - \
-    /usr/local/share/.cache/yarn/v4 \
+  # docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
+  #   /usr/local/share/.cache/yarn/v*/ \
+  #   /opt/app-root/src/.npm-global || true'
+  docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
+    /usr/local/share/.cache/yarn/v*/ \
     /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
 
   rm -rf src
@@ -411,14 +411,14 @@ handle_che_theia_endpoint_runtime_binary() {
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
 
   # npm/yarn cache
-  # /usr/local/share/.cache/yarn/v4 = yarn cache dir
+  # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /usr/local/share/.config/yarn/global
   # /opt/app-root/src/.npm-global = yarn symlinks
-  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
-    /usr/local/share/.cache/yarn \
-    /usr/local/share/.config/yarn/global || true'
-  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar --ignore-failed-read --verify -pzcf - \
-    /usr/local/share/.cache/yarn/v4 \
+  # docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
+  #   /usr/local/share/.cache/yarn/v*/ \
+  #   /usr/local/share/.config/yarn/global || true'
+  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
+    /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
   # node
