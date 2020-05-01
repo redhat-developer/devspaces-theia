@@ -61,8 +61,9 @@ timeout(20) {
           doGenerateSubmoduleConfigurations: false, 
           poll: true,
           extensions: [
-            [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"], 
-            [$class: 'CloneOption', shallow: true, depth: 1]
+            [$class: 'RelativeTargetDirectory', relativeTargetDir: "tmp/che-theia"]
+            // , 
+            // [$class: 'CloneOption', shallow: true, depth: 1]
           ], 
           submoduleCfg: [], 
           userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
