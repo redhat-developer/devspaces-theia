@@ -308,14 +308,15 @@ handle_che_theia() {
   # /home/theia-dev/.cache = include electron/node-gyp cache
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la /tmp/vscode-ripgrep-cache*'
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
-    /home/theia-dev/theia-source-code \
+    /home/theia-dev/theia-source-code/dev-packages \
+    /home/theia-dev/theia-source-code/node_modules \
     /home/theia-dev/theia-source-code/packages \
-    /home/theia-dev/theia-source-code/packages/debug-nodejs \
-    /home/theia-dev/theia-source-code/packages/debug-nodejs/download'
+    /home/theia-dev/theia-source-code/plugins'
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /home/theia-dev/theia-source-code/packages/debug-nodejs/download  \
+    /home/theia-dev/theia-source-code/dev-packages  \
+    /home/theia-dev/theia-source-code/packages  \
+    /home/theia-dev/theia-source-code/plugins  \
     /tmp/vscode-ripgrep-cache-* \
-    /home/theia-dev/theia-source-code/plugins/  \
     /home/theia-dev/.cache' > asset-post-download-dependencies.tar.gz
   
   # node-headers
