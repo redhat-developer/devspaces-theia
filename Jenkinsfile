@@ -96,7 +96,8 @@ timeout(180) {
         // '''
 
         // TODO pass che-theia and theia tags/branches to this script
-        def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --squash --no-cache --rmi:all --no-async-tests"
+        // "--squash" is only supported on a Docker daemon with experimental features enabled
+        def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
         def buildStatusCode = 0
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
