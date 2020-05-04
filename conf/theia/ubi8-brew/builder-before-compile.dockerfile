@@ -1,7 +1,8 @@
 #{IF:DO_REMOTE_CHECK}
 # globally install node-gyp ahead of time. Note: theia depends on ^5.0 and ^3.8 but might install ^6.0
-RUN yarn global add node-gyp && node-gyp install && \
-    sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
+RUN yarn global add node-gyp
+RUN node-gyp install
+RUN sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
 #ENDIF
 
 COPY asset-yarn.tar.gz asset-post-download-dependencies.tar.gz /tmp/

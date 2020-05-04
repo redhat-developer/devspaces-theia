@@ -348,6 +348,10 @@ handle_che_theia() {
   # Copy branding files
   cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
+  echo "========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile =========>"
+  cat Dockerfile
+  echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
+
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
