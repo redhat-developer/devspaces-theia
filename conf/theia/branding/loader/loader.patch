@@ -41,8 +41,8 @@ diff --git a/packages/core/src/browser/style/variables-bright.useable.css b/pack
 index 8521a0ded..ca5fd77ea 100644
 --- a/packages/core/src/browser/style/variables-bright.useable.css
 +++ b/packages/core/src/browser/style/variables-bright.useable.css
-@@ -175,7 +175,7 @@ is not optimized for dense, information rich UIs.
-   --theia-icon-close: url(../icons/close-bright.svg);
+@@ -61,7 +61,7 @@ is not optimized for dense, information rich UIs.
+   --theia-icon-arrow-down: url(../icons/arrow-down-bright.svg);
    --theia-sprite-y-offset: 0px;
    --theia-icon-circle: url(../icons/circle-bright.svg);
 -  --theia-preloader: url(../icons/spinner.gif);
@@ -54,8 +54,8 @@ diff --git a/packages/core/src/browser/style/variables-dark.useable.css b/packag
 index 8d290a4ac..5a0218245 100644
 --- a/packages/core/src/browser/style/variables-dark.useable.css
 +++ b/packages/core/src/browser/style/variables-dark.useable.css
-@@ -175,7 +175,7 @@ is not optimized for dense, information rich UIs.
-   --theia-icon-close: url(../icons/close-dark.svg);
+@@ -61,7 +61,7 @@ is not optimized for dense, information rich UIs.
+   --theia-icon-arrow-down: url(../icons/arrow-down-dark.svg);
    --theia-sprite-y-offset: -20px;
    --theia-icon-circle: url(../icons/circle-dark.svg);
 -  --theia-preloader: url(../icons/spinner.gif);
