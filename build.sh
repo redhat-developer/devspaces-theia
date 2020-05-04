@@ -355,8 +355,13 @@ handle_che_theia() {
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed." exit 1; fi
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
+  NONZERO="$(grep "returned a non-zero code:"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt)"
+  if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
+    echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed: "
+    echo "${NONZERO}"
+    exit 1
+  fi
   popd >/dev/null
 
   # Set the CDN options inside the docker file

@@ -109,6 +109,13 @@ pushd ${WORKSPACE}/crw-theia >/dev/null
 popd >/dev/null
 ''', returnStatus: true
 
+            def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+            if (buildStatusCode != 0 || buildLog.find(/returned a non-zero code:/)?.trim())
+            {
+                error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
+                currentBuild.result = 'FAILED'
+            }
+
             stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
 
             archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
@@ -194,6 +201,7 @@ def SRC_SHA1=""
 timeout(120) {
   node("${buildNode}"){ stage "Sync repos"
 
+    echo "currentBuild.result" + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
     withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
@@ -418,6 +426,7 @@ timeout(180) {
   node("${buildNode}"){
     stage "rhpkg container-builds"
 
+    echo "currentBuild.result" + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
