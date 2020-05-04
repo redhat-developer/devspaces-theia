@@ -83,6 +83,8 @@ timeout(180) {
           userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
         installNPM()
 
+        def buildLog = ""
+
         // CRW-360 use RH NPM mirror
         // if ("${USE_PUBLIC_NEXUS}".equals("false")) {
         //     sh '''#!/bin/bash -xe 
@@ -109,7 +111,7 @@ pushd ${WORKSPACE}/crw-theia >/dev/null
 popd >/dev/null
 ''', returnStatus: true
 
-            def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+            buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
             if (buildStatusCode != 0 || buildLog.find(/returned a non-zero code:/)?.trim())
             {
                 error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
@@ -172,7 +174,7 @@ error /(?i)^error /
                 print "ERROR: LogParserPublisher failed: \n" +al
             }
 
-            def buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
+            buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
             if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
             {
                 error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
