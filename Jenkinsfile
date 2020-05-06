@@ -52,9 +52,10 @@ npm --version; yarn --version
 
 timeout(20) {
     node("${buildNode}"){
+      stage "Checkout Che Theia"
+      wrap([$class: 'TimestamperBuildWrapper']) {
         // check out che-theia before we need it in build.sh so we can use it as a poll basis
         // then discard this folder as we need to check them out and massage them for crw
-        stage "Checkout Che Theia"
         sh "mkdir -p tmp"
         checkout([$class: 'GitSCM', 
           branches: [[name: "${CHE_THEIA_BRANCH}"]], 
@@ -68,11 +69,13 @@ timeout(20) {
           submoduleCfg: [], 
           userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
         sh "rm -fr tmp"
+      }
     }
 }
 timeout(180) {
     node("${buildNode}"){
         stage "Build CRW Theia --no-async-tests"
+        wrap([$class: 'TimestamperBuildWrapper']) {
         cleanWs()
         checkout([$class: 'GitSCM', 
           branches: [[name: "${branchToBuildCRW}"]], 
@@ -186,6 +189,7 @@ error /(?i)^error /
                 currentBuild.result = 'FAILED'
             }
         }
+      }
     }
 }
 
@@ -207,6 +211,7 @@ def SRC_SHA1=""
 
 timeout(120) {
   node("${buildNode}"){ stage "Sync repos"
+	  wrap([$class: 'TimestamperBuildWrapper']) {
 
     echo "currentBuild.result" + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
@@ -426,12 +431,14 @@ done
     } else {
       echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
     }
+   }
   }
 }
 
 timeout(180) {
   node("${buildNode}"){
     stage "rhpkg container-builds"
+	  wrap([$class: 'TimestamperBuildWrapper']) {
 
     echo "currentBuild.result" + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
@@ -564,5 +571,6 @@ timeout(180) {
     } else {
       echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
     }
+   }
   }
 }
