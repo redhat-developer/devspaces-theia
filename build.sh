@@ -228,10 +228,9 @@ handle_che_theia_dev() {
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
-  # debug why this is failing
-  echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
-  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
-  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
+  # echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  # cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  # echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
@@ -353,15 +352,15 @@ handle_che_theia() {
   # Copy branding files
   cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
-  echo "========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile =========>"
-  cat Dockerfile
-  echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
+  # echo "========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile =========>"
+  # cat Dockerfile
+  # echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
 
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
-  NONZERO="$(grep "returned a non-zero code:"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt)"
+  NONZERO="$(grep "returned a non-zero code:"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
   if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
     echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed: "
     echo "${NONZERO}"
