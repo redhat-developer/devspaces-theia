@@ -224,7 +224,7 @@ handle_che_theia_dev() {
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
   popd >/dev/null
   
-  # Copy generate Dockerfile
+  # Copy generated Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
@@ -346,7 +346,7 @@ handle_che_theia() {
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
   
-  # Copy generate Dockerfile
+  # Copy generated Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
@@ -446,7 +446,7 @@ handle_che_theia_endpoint_runtime_binary() {
     -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' \
     > asset-node-src.tar.gz
   
-  # Copy generate Dockerfile
+  # Copy generated Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
   
   # build local
