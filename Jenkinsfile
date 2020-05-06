@@ -114,8 +114,13 @@ popd >/dev/null
             buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
             if (buildStatusCode != 0 || buildLog.find(/returned a non-zero code:/)?.trim())
             {
+              ansiColor('xterm') {
+                echo ""
+                echo "=============================================================================================="
+                echo ""
                 error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
-                currentBuild.result = 'FAILED'
+              }
+              currentBuild.result = 'FAILED'
             }
 
             stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")

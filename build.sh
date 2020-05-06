@@ -228,6 +228,11 @@ handle_che_theia_dev() {
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
+  # debug why this is failing
+  echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
+
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
   docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
