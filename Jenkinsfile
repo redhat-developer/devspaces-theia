@@ -9,9 +9,9 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // slave label
-def nodeVersion = "10.20.1"
+def nodeVersion = "10.19.0"
 def installNPM(){
-    def yarnVersion="1.17.3"
+    def yarnVersion="1.21.1"
     def nodeHome = tool 'nodejs-'+nodeVersion
     env.PATH="${nodeHome}/bin:${env.PATH}"
     sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
