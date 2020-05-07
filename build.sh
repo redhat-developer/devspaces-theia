@@ -22,11 +22,11 @@ See https://github.com/settings/tokens for more information.
 
 Usage:
   export GITHUB_TOKEN=*your token here*
-  $0 --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO [options] 
+  $0 --nv nodeVersion --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO [options] 
 
 Example:
-  $0 --ctb 7.12.x --tb crw-2.2.0.9bc52ad --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache 
-  $0 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
+  $0 --nv 10.20.1 --ctb 7.12.x --tb crw-2.2.0.9bc52ad --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache
+  $0 --nv 10.20.1 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
 
 Options: 
   $0 -d      | build theia-dev
@@ -69,6 +69,7 @@ THEIA_BRANCH="master"
 THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
 for key in "$@"; do
   case $key in 
+      '--nv') nodeVersion="$2"; shift 2;;
       '--ctb') CHE_THEIA_BRANCH="$2"; shift 2;;
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
@@ -324,7 +325,13 @@ handle_che_theia() {
     /home/theia-dev/.cache' > asset-post-download-dependencies.tar.gz
   
   # node-headers
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
+  download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz"
+  echo -n "Local node version: "; node --version
+  echo "Requested node version: ${nodeVersion}"
+  echo "URL to curl: ${download_url}"
+  curl -sSL "${download_url}" -o asset-node-headers.tar.gz
+  # docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
   
   # Add yarn.lock after compilation
   docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
@@ -441,9 +448,13 @@ handle_che_theia_endpoint_runtime_binary() {
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
   # node
-  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} \
-    -c 'nodeVersion=$(node --version); download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' \
-    > asset-node-src.tar.gz
+  download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz"
+  echo -n "Local node version: "; node --version
+  echo "Requested node version: ${nodeVersion}"
+  echo "URL to curl: ${download_url}"
+  curl -sSL "${download_url}" -o asset-node-src.tar.gz
+  # docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
   
   # Copy generated Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile

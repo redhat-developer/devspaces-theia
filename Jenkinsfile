@@ -9,9 +9,10 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // slave label
+def nodeVersion = "10.20.1"
 def installNPM(){
     def yarnVersion="1.17.3"
-    def nodeHome = tool 'nodejs-10.20.1'
+    def nodeHome = tool 'nodejs-'+nodeVersion
     env.PATH="${nodeHome}/bin:${env.PATH}"
     sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
     if ("${USE_PUBLIC_NEXUS}".equals("false")) {
@@ -103,13 +104,14 @@ timeout(180) {
 
         // TODO pass che-theia and theia tags/branches to this script
         // "--squash" is only supported on a Docker daemon with experimental features enabled
-        def BUILD_PARAMS="--ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
+        def BUILD_PARAMS="--nv ${nodeVersion} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
         def buildStatusCode = 0
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
 export GITHUB_TOKEN="''' + GITHUB_TOKEN + '''"
 mkdir -p ${WORKSPACE}/logs/
 pushd ${WORKSPACE}/crw-theia >/dev/null
+    node --version
     ./build.sh ''' + BUILD_PARAMS + ''' 2>&1 | tee ${WORKSPACE}/logs/crw-theia_buildlog.txt
 popd >/dev/null
 ''', returnStatus: true
