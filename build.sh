@@ -360,7 +360,7 @@ handle_che_theia() {
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
   docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
-  NONZERO="$(grep "returned a non-zero code:"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
+  NONZERO="$(grep "a non-zero code:"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
   if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
     echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed: "
     echo "${NONZERO}"
@@ -476,13 +476,14 @@ done
 # optional cleanup of generated images
 if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from docker registry"
-  docker rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE
+  docker rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
 fi
 if [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete che-theia images from docker registry"
-  docker rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME
+  docker rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
 fi
 
+set +x
 echo; echo "Dockerfiles and tarballs generated. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
 for step in $STEPS; do
   output_dir=${step//_/-};output_dir=${output_dir/handle-che-/}
