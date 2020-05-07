@@ -10,7 +10,7 @@
 
 def buildNode = "rhel7-releng" // slave label
 def nodeVersion = "10.19.0"
-def installNPM(){
+def installNPM(nodeVersion){
     def yarnVersion="1.21.1"
     def nodeHome = tool 'nodejs-'+nodeVersion
     env.PATH="${nodeHome}/bin:${env.PATH}"
@@ -85,7 +85,7 @@ timeout(180) {
           extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
           submoduleCfg: [], 
           userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-        installNPM()
+        installNPM(nodeVersion)
 
         def buildLog = ""
 
