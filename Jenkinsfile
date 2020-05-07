@@ -11,7 +11,7 @@
 def buildNode = "rhel7-releng" // slave label
 def nodeVersion = "10.19.0"
 def installNPM(nodeVersion){
-    def yarnVersion="1.21.1"
+    def yarnVersion="1.17.3"
     def nodeHome = tool 'nodejs-'+nodeVersion
     env.PATH="${nodeHome}/bin:${env.PATH}"
     sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"

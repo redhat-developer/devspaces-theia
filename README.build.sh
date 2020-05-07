@@ -7,6 +7,6 @@
 # ARG CHE_THEIA_BRANCH=7.9.x
 # ARG THEIA_BRANCH=master
 # ARG NODE_VERSION=10.19.0
-# ARG YARN_VERSION=1.21.1
+# ARG YARN_VERSION=1.17.3
 
 docker build . -t crw-theia-build --build-arg GITHUB_TOKEN=$1
