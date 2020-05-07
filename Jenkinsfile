@@ -156,7 +156,7 @@ warning /Connection refused/
 # errors
 error / \\[ERROR\\] /
 error /exec returned: .+/
-error /non-zero code/
+error /returned a non-zero code/
 error /ripgrep: Command failed/
 error /The following error occurred/
 error /Downloading ripgrep failed/
