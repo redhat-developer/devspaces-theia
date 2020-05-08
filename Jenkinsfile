@@ -295,7 +295,7 @@ done
 
       // TODO should this be a branch instead of just master?
       CRW_VERSION = sh(script: '''#!/bin/bash -xe
-      wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION
+      wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/2.1.x/dependencies/VERSION
       ''', returnStdout: true)
       println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
