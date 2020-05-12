@@ -1,2 +1,2 @@
 # revert offline mode (put back previous DNS resolution)
-RUN mv /etc/resolv.conf{.BAK,}
+RUN rm -f /etc/resolv.conf && mv /etc/resolv.conf{.BAK,} || true
