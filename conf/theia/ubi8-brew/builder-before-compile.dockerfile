@@ -34,3 +34,5 @@ RUN \
 # comment out -- this fails with "Device or resource busy"
 # RUN mv /etc/resolv.conf{,.BAK} && echo "" > /etc/resolv.conf
 RUN echo "" > /etc/resolv.conf || true
+# kill all electron 
+RUN rm -fr /home/theia-dev/theia-source-code/node_modules/*/electron /home/theia-dev/theia-source-code/node_modules/*electron* || true
