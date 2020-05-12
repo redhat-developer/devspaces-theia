@@ -31,4 +31,6 @@ RUN \
     && for d in plugins/*/package.json; do echo "Disable 'yarn test' in $d"; sed -i -e "s/ && yarn test//" $d; done
 
 # enable offline move (no DNS resolution)
-RUN mv /etc/resolv.conf{,.BAK} && echo "" > /etc/resolv.conf
+# comment out -- this fails with "Device or resource busy"
+# RUN mv /etc/resolv.conf{,.BAK} && echo "" > /etc/resolv.conf
+RUN echo "" > /etc/resolv.conf || true
