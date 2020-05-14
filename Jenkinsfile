@@ -102,9 +102,10 @@ timeout(180) {
         // for d in $(find . -name package.json); do sed -i $d -e 's#yarn #yarn --verbose #g'; done
         // '''
 
-        // TODO pass che-theia and theia tags/branches to this script
-        // "--squash" is only supported on a Docker daemon with experimental features enabled
+        // NOTE: "--squash" is only supported on a Docker daemon with experimental features enabled
+
         def BUILD_PARAMS="--nv ${nodeVersion} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
+        if (!THEIA_COMMIT_SHA.equals("")) { BUILD_PARAMS=BUILD_PARAMS+" --tcs ${THEIA_COMMIT_SHA}"; }
         def buildStatusCode = 0
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
