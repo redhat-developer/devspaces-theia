@@ -309,6 +309,12 @@ handle_che_theia() {
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
   popd >/dev/null
   
+  # workaround for building the endpoint
+  # seems that this stage creates quay.io/crw/theia-rhel8:next (if local ubi-brew build is successful!) but
+  # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
+  ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" quay.io/crw/theia-rhel8:next
+  ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next
+
   # Copy assets from ubi8 to local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
 
@@ -385,25 +391,26 @@ handle_che_theia() {
   cat Dockerfile
   echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
 
-  # build local
-  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  ${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
-    2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
-  NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
-  if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
-    echo "[ERROR] Container build of ${CHE_THEIA_IMAGE_NAME} failed: "
-    echo "${NONZERO}"
-    exit 1
-  fi
-  popd >/dev/null
+  # build local 
+  # https://github.com/eclipse/che/issues/16844 -- fails in Jenkins and locally since 7.12 so comment out 
+  #pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
+  #${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
+  #  --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
+  #  2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
+  #NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
+  #if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
+  #  echo "[ERROR] Container build of ${CHE_THEIA_IMAGE_NAME} failed: "
+  #  echo "${NONZERO}"
+  #  exit 1
+  #fi
+  #popd >/dev/null
 
   # Set the CDN options inside the Dockerfile
   sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile -r \
       -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' \
       -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#'
 
-  # TODO: should we use some other Dockerfile? Contain
+  # TODO: should we use some other Dockerfile?
   echo "-=-=-=- dockerfiles -=-=-=->"
   find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | egrep -v "alpine|e2e"
   echo "<-=-=-=- dockerfiles -=-=-=-"
@@ -420,7 +427,7 @@ handle_che_theia() {
   popd >/dev/null
 
   # workaround for building the endpoint
-  # seems that this stage creates quay.io/crw/theia-rhel8:next but
+  # seems that this stage creates quay.io/crw/theia-rhel8:next (if local ubi-brew build is successful!) but
   # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
   ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next
 }
