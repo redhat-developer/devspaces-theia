@@ -22,10 +22,10 @@ See https://github.com/settings/tokens for more information.
 
 Usage:
   export GITHUB_TOKEN=*your token here*
-  $0 --nv nodeVersion --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO [options] 
+  $0 --nv nodeVersion --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO --tcs THEIA_COMMIT_SHA [options] 
 
 Example:
-  $0 --nv 10.20.1 --ctb 7.12.x --tb crw-2.2.0.9bc52ad --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache
+  $0 --nv 10.20.1 --ctb 7.13.x --tb master --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache
   $0 --nv 10.20.1 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
 
 Options: 
@@ -38,10 +38,12 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
 
-  --tgr      | container build arg THEIA_GITHUB_REPO from which to get theia sources, 
+  --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, 
              | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
-  --squash   | if running docker in experimental mode, squash images
-  --no-cache | do not use docker cache
+  --tcs      | container vbuild arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources
+             | default: none, thus the tip of the master branch
+  --squash   | if running docker in experimental mode, squash images; may not work with podman
+  --no-cache | do not use docker/podman cache
 
 Test control flags:
   --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
@@ -67,12 +69,14 @@ DOCKERFLAGS="" # eg., --no-cache --squash
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
 THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
+THEIA_COMMIT_SHA=""
 for key in "$@"; do
   case $key in 
       '--nv') nodeVersion="$2"; shift 2;;
       '--ctb') CHE_THEIA_BRANCH="$2"; shift 2;;
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
+      '--tcs') THEIA_COMMIT_SHA="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
       '-b') STEPS="${STEPS} handle_che_theia_endpoint_runtime_binary"; shift 1;;
@@ -86,6 +90,22 @@ for key in "$@"; do
       '--no-tests')       SKIP_ASYNC_TESTS=1; SKIP_SYNC_TESTS=1; shift 1;;
   esac
 done
+
+# build with podman if present
+PODMAN=$(which podman)
+if [[ ${PODMAN} ]]; then
+  DOCKER="${PODMAN} --cgroup-manager=cgroupfs --runtime=/usr/bin/crun"
+  DOCKERRUN="${PODMAN}"
+else
+  DOCKER="docker"
+  DOCKERRUN="docker"
+fi
+
+if [[ ! ${THEIA_COMMIT_SHA} ]]; then
+  pushd /tmp 2>/dev/null && curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/7.13.x/build.include
+  export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+fi
+echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA}"
 
 #need to edit conf/theia/ubi8-brew/builder-from.dockerfile file as well for now
 #need to edit conf/theia-endpoint-runtime/ubi8-brew/builder-from.dockerfile file as well for now
@@ -182,10 +202,10 @@ handle_che_theia_dev() {
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
-  docker build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
+  ${DOCKER} build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
 # For use in default
-  docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
+  ${DOCKERRUN} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -215,11 +235,11 @@ handle_che_theia_dev() {
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  # docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /home/theia-dev/.yarn-global \
   #   /opt/app-root/src/.npm-global'
-  docker run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
@@ -235,8 +255,8 @@ handle_che_theia_dev() {
 
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  docker build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_DEV_IMAGE_NAME} failed." exit 1; fi
+  ${DOCKER} build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${CHE_THEIA_DEV_IMAGE_NAME} failed." exit 1; fi
   popd >/dev/null
 
   # list generated assets & tarballs
@@ -251,7 +271,7 @@ handle_che_theia_dev() {
 
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
   # theia build stage wants eclipse/che-theia-dev:next
-  # see above, where we docker tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
+  # see above, where we tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next
 }
 
 # now do che-theia
@@ -263,16 +283,16 @@ handle_che_theia() {
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   # first generate the Dockerfile
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}    
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}    
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
+  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
   # and create runtime image as well
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
+  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
   popd >/dev/null
   
   # Create image theia-dev:ubi8-brew
@@ -284,7 +304,7 @@ handle_che_theia() {
   # dry-run for theia:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}    
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
   popd >/dev/null
   
   # Copy assets from ubi8 to local
@@ -297,11 +317,11 @@ handle_che_theia() {
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  # docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /home/theia-dev/.yarn-global \
   #   /opt/app-root/src/.npm-global'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tar.gz
@@ -311,13 +331,13 @@ handle_che_theia() {
   # /home/theia-dev/theia-source-code/plugins/ = VS Code extensions
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la /tmp/vscode-ripgrep-cache*'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la /tmp/vscode-ripgrep-cache*'
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
     /home/theia-dev/theia-source-code/dev-packages \
     /home/theia-dev/theia-source-code/node_modules \
     /home/theia-dev/theia-source-code/packages \
     /home/theia-dev/theia-source-code/plugins'
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
     /home/theia-dev/theia-source-code/dev-packages  \
     /home/theia-dev/theia-source-code/packages  \
     /home/theia-dev/theia-source-code/plugins  \
@@ -330,22 +350,22 @@ handle_che_theia() {
   echo "Requested node version: ${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-headers.tar.gz
-  # docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
   
   # Add yarn.lock after compilation
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn.lock
 
   # Theia source code
-  docker run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
 
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /opt/app-root/src/.npm-global = npm global
-  # docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /opt/app-root/src/.npm-global'
-  docker run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
 
@@ -365,22 +385,23 @@ handle_che_theia() {
 
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  docker build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} 2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
+  ${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
+    2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
   NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
   if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
-    echo "[ERROR] Docker build of ${CHE_THEIA_IMAGE_NAME} failed: "
+    echo "[ERROR] Container build of ${CHE_THEIA_IMAGE_NAME} failed: "
     echo "${NONZERO}"
     exit 1
   fi
   popd >/dev/null
 
-  # Set the CDN options inside the docker file
+  # Set the CDN options inside the Dockerfile
   sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile -r \
       -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' \
       -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#'
 
-  # TODO: should we use some other Dockerfile? 
+  # TODO: should we use some other Dockerfile? Contain
   echo "-=-=-=- dockerfiles -=-=-=->"
   find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | egrep -v "alpine|e2e"
   echo "<-=-=-=- dockerfiles -=-=-=-"
@@ -399,7 +420,7 @@ handle_che_theia() {
   # workaround for building the endpoint
   # seems that this stage creates quay.io/crw/theia-rhel8:next but
   # endpoint build stage wants eclipse/che-theia:next (which no longer exists on dockerhub)
-  docker tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next
+  ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next
 }
 
 # now do che-theia-endpoint-runtime-binary
@@ -415,9 +436,9 @@ handle_che_theia_endpoint_runtime_binary() {
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  docker build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
     --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
   popd >/dev/null
 
   # Create image theia-endpoint-runtime-binary:ubi8-brew
@@ -440,10 +461,10 @@ handle_che_theia_endpoint_runtime_binary() {
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /usr/local/share/.config/yarn/global
   # /opt/app-root/src/.npm-global = yarn symlinks
-  # docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /usr/local/share/.config/yarn/global'
-  docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
@@ -453,16 +474,16 @@ handle_che_theia_endpoint_runtime_binary() {
   echo "Requested node version: ${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-src.tar.gz
-  # docker run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
   
   # Copy generated Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
   
   # build local
-  docker build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Docker build of ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} failed." exit 1; fi
+  ${DOCKER} build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
+    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} failed." exit 1; fi
   popd >/dev/null
 
   # list generated assets & tarballs
@@ -486,12 +507,12 @@ done
 
 # optional cleanup of generated images
 if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
-  echo;echo "Delete temp images from docker registry"
-  docker rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
+  echo;echo "Delete temp images from container registry"
+  ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
 fi
 if [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
-  echo;echo "Delete che-theia images from docker registry"
-  docker rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
+  echo;echo "Delete che-theia images from container registry"
+  ${DOCKERRUN} rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
 fi
 
 set +x
