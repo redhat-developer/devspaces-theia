@@ -92,7 +92,7 @@ for key in "$@"; do
 done
 
 # build with podman if present
-PODMAN=$(which podman)
+PODMAN=$(which podman 2>/dev/null || true)
 if [[ ${PODMAN} ]]; then
   DOCKER="${PODMAN} --cgroup-manager=cgroupfs --runtime=/usr/bin/crun"
   DOCKERRUN="${PODMAN}"
