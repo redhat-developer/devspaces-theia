@@ -102,8 +102,10 @@ else
 fi
 
 if [[ ! ${THEIA_COMMIT_SHA} ]]; then
-  pushd /tmp 2>/dev/null && curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/7.13.x/build.include
+  pushd /tmp 2>/dev/null || true
+  curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/7.13.x/build.include
   export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+  popd 2>/dev/null || true
 fi
 echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA}"
 
