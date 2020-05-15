@@ -353,9 +353,9 @@ handle_che_theia() {
     /home/theia-dev/.cache' > asset-post-download-dependencies.tar.gz
   
   # node-headers
-  download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz"
+  download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-headers.tar.gz"
   echo -n "Local node version: "; node --version
-  echo "Requested node version: ${nodeVersion}"
+  echo "Requested node version: v${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-headers.tar.gz
   # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
@@ -477,14 +477,14 @@ handle_che_theia_endpoint_runtime_binary() {
     /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
   
-  # node
-  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz"
-  # echo -n "Local node version: "; node --version
-  # echo "Requested node version: ${nodeVersion}"
-  # echo "URL to curl: ${download_url}"
+  # node-src
+  download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}.tar.gz"
+  echo -n "Local node version: "; node --version
+  echo "Requested node version: v${nodeVersion}"
+  echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-src.tar.gz
-  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
-  download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
+  # ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
   
   # Copy generated Dockerfile
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
