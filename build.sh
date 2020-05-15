@@ -245,15 +245,27 @@ handle_che_theia_dev() {
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
+
+  # Do we need to explicitly create this tarball to use it in Dockerfile?
+  #${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
+  #  /home/theia-dev/asset-unpacked-generator' > asset-eclipse-che-theia-generator.tgz
+
   popd >/dev/null
   
   # Copy generated Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
-  # echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
-  # cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
-  # echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
+  # fix Dockerfile to use tarball instead of folder
+  # +COPY asset-eclipse-che-theia-generator.tgz ${HOME}/eclipse-che-theia-generator.tgz
+  # -COPY asset-unpacked-generator ${HOME}/eclipse-che-theia-generator
+  sed -i -r \
+    -e "s#COPY asset-unpacked-generator#COPY asset-eclipse-che-theia-generator#g" \
+    -e "s#eclipse-che-theia-generator#eclipse-che-theia-generator.tgz#g"
+ 
+  echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
   # build local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
