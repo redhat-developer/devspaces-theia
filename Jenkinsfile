@@ -105,7 +105,19 @@ timeout(180) {
         // NOTE: "--squash" is only supported on a Docker daemon with experimental features enabled
 
         def BUILD_PARAMS="--nv ${nodeVersion} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
-        if (!THEIA_COMMIT_SHA.equals("")) { BUILD_PARAMS=BUILD_PARAMS+" --tcs ${THEIA_COMMIT_SHA}"; }
+        if (!THEIA_COMMIT_SHA.equals("")) {
+          BUILD_PARAMS=BUILD_PARAMS+" --tcs ${THEIA_COMMIT_SHA}";
+        } else {
+          THEIA_COMMIT_SHA = sh(script: '''#!/bin/bash -xe
+  pushd /tmp >/dev/null || true
+  curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/''' + CHE_THEIA_BRANCH + '''/build.include
+  export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+  popd >/dev/null || true
+  echo $THEIA_COMMIT_SHA
+          ''', returnStdout: true)
+          echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA} from ${CHE_THEIA_BRANCH} branch"
+        }
+
         def buildStatusCode = 0
         ansiColor('xterm') {
             buildStatusCode = sh script:'''#!/bin/bash -xe
@@ -134,7 +146,7 @@ popd >/dev/null
             archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
             // TODO start collecting shas with "git rev-parse --short=4 HEAD"
-            def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_BRANCH}"
+            def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_COMMIT_SHA} (${THEIA_BRANCH})"
             echo "${descriptString}"
             currentBuild.description="${descriptString}"
 
