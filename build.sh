@@ -259,7 +259,7 @@ handle_che_theia_dev() {
   # fix Dockerfile to use tarball instead of folder
   # +COPY asset-eclipse-che-theia-generator.tgz ${HOME}/eclipse-che-theia-generator.tgz
   # -COPY asset-unpacked-generator ${HOME}/eclipse-che-theia-generator
-  sed -i ${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile -r \
+  sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile -r \
     -e "s#COPY asset-unpacked-generator#COPY asset-eclipse-che-theia-generator#g" \
     -e "s#eclipse-che-theia-generator#eclipse-che-theia-generator.tgz#g"
  
