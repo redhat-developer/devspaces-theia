@@ -111,7 +111,7 @@ timeout(180) {
           THEIA_COMMIT_SHA = sh(script: '''#!/bin/bash -xe
   pushd /tmp >/dev/null || true
   curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/''' + CHE_THEIA_BRANCH + '''/build.include
-  export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+  export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\\"/}
   popd >/dev/null || true
   echo $THEIA_COMMIT_SHA
           ''', returnStdout: true)
