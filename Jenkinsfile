@@ -144,15 +144,27 @@ popd >/dev/null
 ok /Couldn't create directory: Failure/
 ok /warning .+ The engine "theiaPlugin" appears to be invalid./
 ok /warning .+ The engine "vscode" appears to be invalid./
+ok /\\[Warning\\] One or more build-args .+ were not consumed/
+ok /Error: No such image: .+/
 
 # section starts: these are used to group errors and warnings found after the line; also creates a quick access link.
 start /====== handle_.+/
+start /Successfully built .+/
+start /Successfully tagged .+/
+start /Script run successfully:.+/
+start /Build of .+ \\[OK\\].+/
+start /docker build .+/
+start /docker run .+/
+start /docker tag .+/
+start /Dockerfiles and tarballs generated.+/
+start /Step [0-9/]+ : .+/
 
 # warnings
 warning /.+\\[WARNING\\].+/
 warning /[Ww]arning/
 warning /WARNING/
 warning /Connection refused/
+warning /error Package .+ refers to a non-existing file .+/
 
 # errors
 error / \\[ERROR\\] /
