@@ -228,7 +228,7 @@ timeout(120) {
   node("${buildNode}"){ stage "Sync repos"
 	  wrap([$class: 'TimestamperBuildWrapper']) {
 
-    echo "currentBuild.result" + currentBuild.result
+    echo "currentBuild.result = " + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
     withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
@@ -455,7 +455,7 @@ timeout(180) {
     stage "rhpkg container-builds"
 	  wrap([$class: 'TimestamperBuildWrapper']) {
 
-    echo "currentBuild.result" + currentBuild.result
+    echo "currentBuild.result = " + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
