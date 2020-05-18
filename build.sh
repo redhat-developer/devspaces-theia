@@ -157,7 +157,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       if [[ ${ASYNC_TESTS} ]]; then
         echo "[WARNING] Disable async tests in $d"
         # echo $ASYNC_TESTS
-        sed -i $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
+        sed_in_place $d -e "s@test(\(.\+async () => {\)@test.skip(\1@g"
         cat $d | grep "test.skip(" | grep "async () => {"
       fi
     done
@@ -172,7 +172,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       if [[ ${SYNC_TESTS} ]]; then
         echo "[WARNING] Disable sync tests in $d"
         # echo $SYNC_TESTS
-        sed -i $d -e "s@test(\(.\+() => {\)@test.skip(\1@g"
+        sed_in_place $d -e "s@test(\(.\+() => {\)@test.skip(\1@g"
         cat $d | grep "test.skip(" | grep -v "async" | grep "() => {"
       fi
     done
@@ -195,6 +195,15 @@ fi
 
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
 DOCKERFILES_ROOT_DIR=${TMP_DIR}/che-theia/dockerfiles
+
+sed_in_place() {
+    SHORT_UNAME=$(uname -s)
+  if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "$@"
+  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
+    sed -i "$@"
+  fi
+}
 
 handle_che_theia_dev() {
   cd "${base_dir}"
@@ -418,9 +427,8 @@ handle_che_theia() {
   #popd >/dev/null
 
   # Set the CDN options inside the Dockerfile
-  sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile -r \
-      -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' \
-      -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#'
+  sed_in_place -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  sed_in_place -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   # TODO: should we use some other Dockerfile?
   echo "-=-=-=- dockerfiles -=-=-=->"
