@@ -266,11 +266,12 @@ handle_che_theia_dev() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
   # fix Dockerfile to use tarball instead of folder
-  # +COPY asset-eclipse-che-theia-generator.tgz ${HOME}/eclipse-che-theia-generator.tgz
   # -COPY asset-unpacked-generator ${HOME}/eclipse-che-theia-generator
-  sed -i "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile -r \
-    -e "s#COPY asset-unpacked-generator#COPY asset-eclipse-che-theia-generator#g" \
-    -e "s#eclipse-che-theia-generator#eclipse-che-theia-generator.tgz#g"
+  # +COPY asset-eclipse-che-theia-generator.tgz ${HOME}/eclipse-che-theia-generator.tgz
+  # + RUN tar zxf eclipse-che-theia-generator.tgz && mv package eclipse-che-theia-generator
+  newline='
+'
+  sed_in_place -e "s#COPY asset-unpacked-generator \${HOME}/eclipse-che-theia-generator#COPY asset-eclipse-che-theia-generator.tgz \${HOME}/eclipse-che-theia-generator.tgz\\${newline}RUN cd \${HOME} \&\& tar zxf eclipse-che-theia-generator.tgz \&\& mv package eclipse-che-theia-generator#" "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
  
   echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
   cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
