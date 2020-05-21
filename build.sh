@@ -415,17 +415,17 @@ handle_che_theia() {
 
   # build local 
   # https://github.com/eclipse/che/issues/16844 -- fails in Jenkins and locally since 7.12 so comment out 
-  #pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  #${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
-  #  --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
-  #  2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
-  #NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
-  #if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
+  ${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
+   --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
+   2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
+  # NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
+  # if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
   #  echo "[ERROR] Container build of ${CHE_THEIA_IMAGE_NAME} failed: "
   #  echo "${NONZERO}"
   #  exit 1
-  #fi
-  #popd >/dev/null
+  # fi
+  popd >/dev/null
 
   # Set the CDN options inside the Dockerfile
   sed_in_place -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
