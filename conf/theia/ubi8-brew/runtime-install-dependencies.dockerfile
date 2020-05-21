@@ -13,5 +13,5 @@ COPY asset-sshpass.tar.gz /tmp/
 # Install less for handling git diff properly
 # Install sshpass for handling passwords for SSH keys
 RUN yum install -y sudo git bzip2 which bash curl openssh less && tar -xvf /tmp/asset-sshpass.tar.gz && \
-    cd /tmp/sshpass-1.06 && ./configure && make install && cd .. && rm -rf sshpass-1.06 && rm sshpass.tar.gz && \
+    cd /tmp/sshpass-*/ && ./configure && make install && cd .. && rm -rf sshpass-* && \
     echo "Installed Packages" && rpm -qa | sort -V && echo "End Of Installed Packages"
