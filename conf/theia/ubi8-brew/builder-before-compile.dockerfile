@@ -1,11 +1,7 @@
 #{IF:DO_REMOTE_CHECK}
 # globally install node-gyp ahead of time. Note: theia depends on ^5.0 and ^3.8 but might install ^6.0
 RUN ls -la /home/theia-dev/*
-# must not fail here even for
-#    error Package "" refers to a non-existing file '"/home/theia-dev/eclipse-che-theia-generator"'.
-#    The command '/bin/sh -c yarn global add node-gyp' returned a non-zero code: 1
-# so always return true
-RUN yarn global add node-gyp || true
+RUN yarn global add node-gyp
 RUN node-gyp install
 RUN sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
 #ENDIF
