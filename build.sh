@@ -128,6 +128,15 @@ TMP_THEIA_RUNTIME_IMAGE="che-theia-runtime:tmp"
 TMP_THEIA_ENDPOINT_BUILDER_IMAGE="che-theia-endpoint-builder:tmp"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
 
+sed_in_place() {
+    SHORT_UNAME=$(uname -s)
+  if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "$@"
+  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
+    sed -i "$@"
+  fi
+}
+
 if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
@@ -196,15 +205,6 @@ fi
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
 DOCKERFILES_ROOT_DIR=${TMP_DIR}/che-theia/dockerfiles
 
-sed_in_place() {
-    SHORT_UNAME=$(uname -s)
-  if [ "$(uname)" == "Darwin" ]; then
-    sed -i '' "$@"
-  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
-    sed -i "$@"
-  fi
-}
-
 handle_che_theia_dev() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
@@ -258,7 +258,7 @@ handle_che_theia_dev() {
   # Do we need to explicitly create this tarball to use it in Dockerfile?
   ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la /home/theia-dev/'
   ${DOCKERRUN} run --rm --entrypoint sh eclipse/che-theia-dev:next -c 'ls -la /home/theia-dev/'
-  
+
   ${DOCKERRUN} run --rm --entrypoint sh eclipse/che-theia-dev:next -c 'tar -pzcf - \
    /home/theia-dev/asset-unpacked-generator' > asset-eclipse-che-theia-generator.tgz
 
