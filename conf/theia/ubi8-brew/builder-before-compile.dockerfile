@@ -1,7 +1,11 @@
 #{IF:DO_REMOTE_CHECK}
 # globally install node-gyp ahead of time. Note: theia depends on ^5.0 and ^3.8 but might install ^6.0
-RUN ls -la /home/theia-dev/*
-RUN yarn global add node-gyp
+# unpack /home/theia-dev/eclipse-che-theia-generator.tgz into /home/theia-dev/eclipse-che-theia-generator so that the node-gyp install doesn't fail
+RUN echo ${HOME} && cd ${HOME} && tar zxf eclipse-che-theia-generator.tgz && mv package eclipse-che-theia-generator && \
+    ls -la /home/theia-dev/*
+
+# do we also need to add file:${HOME}/eclipse-che-theia-generator
+RUN yarn global add node-gyp 
 RUN node-gyp install
 RUN sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
 #ENDIF
