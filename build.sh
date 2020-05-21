@@ -256,8 +256,8 @@ handle_che_theia_dev() {
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
 
   # Do we need to explicitly create this tarball to use it in Dockerfile?
-  #${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
-  #  /home/theia-dev/asset-unpacked-generator' > asset-eclipse-che-theia-generator.tgz
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
+   /home/theia-dev/asset-unpacked-generator' > asset-eclipse-che-theia-generator.tgz
 
   popd >/dev/null
   
