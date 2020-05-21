@@ -237,7 +237,7 @@ handle_che_theia_dev() {
   echo "Remove previous assets"
   rm -rf assets-*
   # copy assets
-  cp -r "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* .
+  cp -r "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* . && ls -la asset-*
   # Copy src
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
@@ -255,18 +255,15 @@ handle_che_theia_dev() {
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn.tgz
 
-  # Do we need to explicitly create this tarball to use it in Dockerfile?
-  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la /home/theia-dev/'
-  ${DOCKERRUN} run --rm --entrypoint sh eclipse/che-theia-dev:next -c 'ls -la /home/theia-dev/'
-
-  ${DOCKERRUN} run --rm --entrypoint sh eclipse/che-theia-dev:next -c 'tar -pzcf - \
-   /home/theia-dev/asset-unpacked-generator' > asset-eclipse-che-theia-generator.tgz
-
   popd >/dev/null
   
   # Copy generated Dockerfile
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+
+  echo "BEFORE SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
   # fix Dockerfile to use tarball instead of folder
   # -COPY asset-unpacked-generator ${HOME}/eclipse-che-theia-generator
@@ -276,7 +273,7 @@ handle_che_theia_dev() {
 '
   sed_in_place -e "s#COPY asset-unpacked-generator \${HOME}/eclipse-che-theia-generator#COPY asset-eclipse-che-theia-generator.tgz \${HOME}/eclipse-che-theia-generator.tgz\\${newline}RUN cd \${HOME} \&\& tar zxf eclipse-che-theia-generator.tgz \&\& mv package eclipse-che-theia-generator#" "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
  
-  echo "======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  echo "AFTER SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
   cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
   echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
