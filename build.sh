@@ -399,6 +399,9 @@ handle_che_theia() {
     /usr/local/share/.cache/yarn/v*/ \
     /opt/app-root/src/.npm-global' > asset-yarn-runtime-image.tar.gz
 
+  # Save sshpass sources
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
+
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
   
