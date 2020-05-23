@@ -453,7 +453,7 @@ handle_che_theia() {
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
 
-  # create asset-branding.zip from branding folder contents
+  # create asset-branding.tar.gz from branding folder contents
   tar -pcvzf asset-branding.tar.gz branding/*
 
   # get list of assets to fetch into brew

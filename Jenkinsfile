@@ -394,8 +394,8 @@ for targetN in target1 target2 target3; do
     if [[ \$targetN == "target2" ]] && [[ ${TARGETDOCKERFILE} != "" ]]; then
       sed -r \
         `# fix up theia loader patch inclusion (3 steps)` \
-        -e "s#ADD branding/loader/loader.patch .+#COPY branding.zip /tmp/branding.zip#g" \
-        -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN unzip -d /tmp/ /tmp/branding.zip; cp /tmp/\\1#g" \
+        -e "s#ADD branding/loader/loader.patch .+#COPY asset-branding.tar.gz /tmp/asset-branding.tar.gz#g" \
+        -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN tar xvzf -C /tmp/ /tmp/asset-branding.tar.gz; cp /tmp/\\1#g" \
         -e "s#(RUN cd .+/theia-source-code && git apply).+#\\1 /tmp/branding/loader/loader.patch#g" \
         `# don't create tarballs` \
         -e "s#.+tar zcf.+##g" \
