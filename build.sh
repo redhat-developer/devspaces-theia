@@ -290,7 +290,13 @@ handle_che_theia_dev() {
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
-  ls -laR asset* *gz || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev - build must exit!"
+
+  # get list of assets to fetch into brew
+  ls -s asset* | sort | uniq | tee asset-list.txt
+  if [[ ! $(cat asset-list.txt) ]]; then 
+    echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
+    exit 1
+  fi
   popd >/dev/null
 
   # this stage creates quay.io/crw/theia-dev-rhel8:next but
@@ -446,9 +452,16 @@ handle_che_theia() {
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
-  # check branding folder too
-  ls -laR asset* *gz branding || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia - build must exit!"
-  popd >/dev/null
+
+  # create asset-branding.zip from branding folder contents
+  tar -pcvzf asset-branding.tar.gz branding/*
+
+  # get list of assets to fetch into brew
+  ls -s asset* | sort | uniq | tee asset-list.txt
+  if [[ ! $(cat asset-list.txt) ]]; then 
+    echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
+    exit 1
+  fi
 
   # workaround for building the endpoint
   # seems that this stage creates quay.io/crw/theia-rhel8:next (if local ubi-brew build is successful!) but
@@ -529,7 +542,14 @@ handle_che_theia_endpoint_runtime_binary() {
     cat $d
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
-  ls -laR asset* *gz || echo "[ERROR] Missing expected files in ${BREW_DOCKERFILE_ROOT_DIR}/theia-endpoint-runtime-binary - build must exit!"
+
+  # get list of assets to fetch into brew
+  ls -s asset* | sort | uniq | tee asset-list.txt
+  if [[ ! $(cat asset-list.txt) ]]; then 
+    echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
+    exit 1
+  fi
+
   popd >/dev/null
 }
 
