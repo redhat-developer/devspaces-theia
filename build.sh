@@ -291,8 +291,8 @@ handle_che_theia_dev() {
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
 
-  # get list of assets to fetch into brew
-  ls -1 asset* | sort | uniq | tee asset-list.txt
+  # get list of assets to fetch into brew - ignore directories
+  ls -1pd asset* | grep -E -v "/$" | sort | uniq | tee asset-list.txt
   if [[ ! $(cat asset-list.txt) ]]; then 
     echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
     exit 1
@@ -456,8 +456,8 @@ handle_che_theia() {
   # create asset-branding.tar.gz from branding folder contents
   tar -pcvzf asset-branding.tar.gz branding/*
 
-  # get list of assets to fetch into brew
-  ls -1 asset* | sort | uniq | tee asset-list.txt
+  # get list of assets to fetch into brew - ignore directories
+  ls -1pd asset* | grep -E -v "/$" | sort | uniq | tee asset-list.txt
   if [[ ! $(cat asset-list.txt) ]]; then 
     echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
     exit 1
@@ -543,8 +543,8 @@ handle_che_theia_endpoint_runtime_binary() {
     echo "<====  ${d} ===="
   done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
 
-  # get list of assets to fetch into brew
-  ls -1 asset* | sort | uniq | tee asset-list.txt
+  # get list of assets to fetch into brew - ignore directories
+  ls -1pd asset* | grep -E -v "/$" | sort | uniq | tee asset-list.txt
   if [[ ! $(cat asset-list.txt) ]]; then 
     echo "[ERROR] Missing expected files in $(pwd) - build must exit!"
     exit 1
