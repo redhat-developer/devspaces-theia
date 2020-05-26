@@ -91,15 +91,18 @@ for key in "$@"; do
   esac
 done
 
+# Use Docker to make GH Actions-based PR checks work in the GH provided Ubuntu VM.
+# As Podman is present there but doesn't work well.
+
 # build with podman if present
-PODMAN=$(which podman 2>/dev/null || true)
-if [[ ${PODMAN} ]]; then
-  DOCKER="${PODMAN} --cgroup-manager=cgroupfs --runtime=/usr/bin/crun"
-  DOCKERRUN="${PODMAN}"
-else
+# PODMAN=$(which podman 2>/dev/null || true)
+# if [[ ${PODMAN} ]]; then
+#   DOCKER="${PODMAN} --cgroup-manager=cgroupfs --runtime=/usr/bin/crun"
+#   DOCKERRUN="${PODMAN}"
+# else
   DOCKER="docker"
   DOCKERRUN="docker"
-fi
+# fi
 
 if [[ ! ${THEIA_COMMIT_SHA} ]]; then
   pushd /tmp >/dev/null || true
