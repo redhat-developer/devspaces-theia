@@ -42,12 +42,12 @@ Additional flags:
              | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
   --tcs      | container vbuild arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources
              | default: none, thus the tip of the master branch
-  --squash   | if running docker in experimental mode, squash images; may not work with podman
-  --no-cache | do not use docker/podman cache
 
-Podman flags:
+Docker + Podman flags:
   --podman      | detect podman and use that instead of docker for building, running, tagging + deleting containers
-  --podmanflags | provide additional flags to podman when building, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
+  --podmanflags | additional flags for podman builds, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
+  --squash      | if running docker in experimental mode, squash images; may not work with podman
+  --no-cache    | do not use docker/podman cache
 
 Test control flags:
   --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
@@ -70,6 +70,7 @@ SKIP_ASYNC_TESTS=0
 SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
+PODMANFLAGS="" # optional flags specific to podman build command 
 
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
