@@ -93,7 +93,7 @@ for key in "$@"; do
       '--no-async-tests') SKIP_ASYNC_TESTS=1; shift 1;;
       '--no-sync-tests')  SKIP_SYNC_TESTS=1; shift 1;;
       '--no-tests')       SKIP_ASYNC_TESTS=1; SKIP_SYNC_TESTS=1; shift 1;;
-      '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 0;;
+      '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 1;;
       '--podmanflags')    PODMANFLAGS="$2"; shift 2;;
   esac
 done
