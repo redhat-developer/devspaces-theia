@@ -1,14 +1,16 @@
 #!/usr/bin/env groovy
 
 // PARAMETERS for this pipeline:
-// branchToBuildCRW = codeready-workspaces branch to build: */2.0.x or */master
-// THEIA_BRANCH = theia branch/tag to build: master, 8814c20, v0.12.0
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.9.x
+// branchToBuildCRW = codeready-workspaces branch to build: */2.2.x or */master
+// THEIA_BRANCH = theia branch/tag to build: master (will then compute the correct SHA to use)
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.13.x
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // slave label
+
+// DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
 def nodeVersion = "10.19.0"
 def installNPM(nodeVersion){
     def yarnVersion="1.17.3"
