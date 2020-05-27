@@ -45,6 +45,10 @@ Additional flags:
   --squash   | if running docker in experimental mode, squash images; may not work with podman
   --no-cache | do not use docker/podman cache
 
+Podman flags:
+  --podman      | detect podman and use that instead of docker for building, running, tagging + deleting containers
+  --podmanflags | provide additional flags to podman when building, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
+
 Test control flags:
   --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
   --no-sync-tests  | replace test(...)         with test.skip(...) in .ts test files
@@ -65,6 +69,7 @@ DELETE_ALL_IMAGES=0
 SKIP_ASYNC_TESTS=0
 SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
+PODMAN="" # by default, use docker
 
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
@@ -88,13 +93,14 @@ for key in "$@"; do
       '--no-async-tests') SKIP_ASYNC_TESTS=1; shift 1;;
       '--no-sync-tests')  SKIP_SYNC_TESTS=1; shift 1;;
       '--no-tests')       SKIP_ASYNC_TESTS=1; SKIP_SYNC_TESTS=1; shift 1;;
+      '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 0;;
+      '--podmanflags')    PODMANFLAGS="$2"; shift 2;;
   esac
 done
 
-# build with podman if present
-PODMAN=$(which podman 2>/dev/null || true)
+# to build with podman if present, use --podman flag, else use docker
 if [[ ${PODMAN} ]]; then
-  DOCKER="${PODMAN} --cgroup-manager=cgroupfs --runtime=/usr/bin/crun"
+  DOCKER="${PODMAN} ${PODMANFLAGS}"
   DOCKERRUN="${PODMAN}"
 else
   DOCKER="docker"
