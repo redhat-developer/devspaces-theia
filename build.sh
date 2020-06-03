@@ -22,11 +22,10 @@ See https://github.com/settings/tokens for more information.
 
 Usage:
   export GITHUB_TOKEN=*your token here*
-  $0 --nv nodeVersion --ctb CHE_THEIA_BRANCH --tb THEIA_BRANCH --tgr THEIA_GITHUB_REPO --tcs THEIA_COMMIT_SHA [options] 
+  $0 --ctb CHE_THEIA_BRANCH [options]
 
 Example:
-  $0 --nv 10.20.1 --ctb 7.13.x --tb master --tgr redhat-developer/eclipse-theia --all --no-tests --no-cache
-  $0 --nv 10.20.1 --ctb master --tb master --tgr eclipse-theia/theia -d -t --no-cache --rmi:tmp --squash
+  $0 --ctb 7.14.x --all --no-cache --no-tests --rmi:tmp
 
 Options: 
   $0 -d      | build theia-dev
@@ -38,10 +37,12 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
 
+  --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, 
+             | default: master; probably don't ever need to override this now that code checkout logic relies on master branch + a specific SHA
   --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, 
-             | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
-  --tcs      | container vbuild arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources
-             | default: none, thus the tip of the master branch
+             | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia - so we can build from a tag instead of a SHA
+  --tcs      | container build arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources
+             | default: if not set, extract from https://raw.githubusercontent.com/eclipse/che-theia/CHE_THEIA_BRANCH/build.include
 
 Docker + Podman flags:
   --podman      | detect podman and use that instead of docker for building, running, tagging + deleting containers
@@ -71,6 +72,7 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
+nodeVersion="10.19.0" # version of node to use (aligned to version in ubi base images)
 
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
