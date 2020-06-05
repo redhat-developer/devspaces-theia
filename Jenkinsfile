@@ -464,7 +464,7 @@ done
   }
 }
 
-timeout(180) {
+timeout(360) {
   node("${buildNode}"){
     stage "rhpkg container-builds"
 	  wrap([$class: 'TimestamperBuildWrapper']) {
@@ -483,7 +483,7 @@ timeout(180) {
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
@@ -525,7 +525,7 @@ timeout(180) {
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
@@ -567,7 +567,7 @@ timeout(180) {
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
