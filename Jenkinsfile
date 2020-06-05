@@ -396,7 +396,7 @@ done
   }
 }
 
-timeout(240) {
+timeout(360) {
   node("${buildNode}"){
     stage "rhpkg container-builds"
 
