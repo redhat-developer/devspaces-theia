@@ -397,9 +397,11 @@ done
 }
 
 timeout(240) {
-  parallel {
-    stage "Theia dev rhpkg container build" {
-      if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
+  node("${buildNode}"){
+    stage "rhpkg container-builds"
+
+    if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
+
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
 
         def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -409,7 +411,7 @@ timeout(240) {
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
-        def theiaDevBuild = build(
+        build(
           job: 'get-sources-rhpkg-container-build',
           wait: true,
           propagate: true,
@@ -442,10 +444,6 @@ timeout(240) {
           ]
         )
 
-      }
-    }
-    stage "Theia rhpkg container build" {
-      if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
         QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
 
         matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -455,7 +453,7 @@ timeout(240) {
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
-        def theiaBuild = build(
+        build(
           job: 'get-sources-rhpkg-container-build',
           wait: true,
           propagate: true,
@@ -487,11 +485,7 @@ timeout(240) {
             ]
           ]
         )
-        echo "Theia container build job started" + 
-      }
-    }
-    stage "Theia endpoint rhpkg container build" {
-      if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
+
         QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
 
         matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
@@ -501,7 +495,7 @@ timeout(240) {
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
-        def theiaEndpointBuild build(
+        build(
           job: 'get-sources-rhpkg-container-build',
           wait: true,
           propagate: true,
@@ -533,7 +527,8 @@ timeout(240) {
             ]
           ]
         )
-      }
+    } else {
+      echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
     }
   }
 }
