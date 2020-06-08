@@ -9,6 +9,7 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // slave label
+def JOB_BRANCH = "master" // or stable-branch
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
 def nodeVersion = "10.19.0"
@@ -464,7 +465,7 @@ done
   }
 }
 
-timeout(180) {
+timeout(360) {
   node("${buildNode}"){
     stage "rhpkg container-builds"
 	  wrap([$class: 'TimestamperBuildWrapper']) {
@@ -473,17 +474,13 @@ timeout(180) {
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
-
-        def matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-        def JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
-
         echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
@@ -515,17 +512,13 @@ timeout(180) {
         )
 
         QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-rhel8"))
-
-        matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-        JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
-
         echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
@@ -557,17 +550,13 @@ timeout(180) {
         )
 
         QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-endpoint-rhel8"))
-
-        matcher = ( "${JOB_NAME}" =~ /.*_(stable-branch|master).*/ )
-        JOB_BRANCH= (matcher.matches() ? matcher[0][1] : "master")
-
         echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
 
         // trigger OSBS build
         build(
           job: 'get-sources-rhpkg-container-build',
-          wait: false,
+          wait: true,
           propagate: true,
           parameters: [
             [
