@@ -81,18 +81,20 @@ timeout(180) {
         stage "Build CRW Theia --no-async-tests"
         wrap([$class: 'TimestamperBuildWrapper']) {
         cleanWs()
-        checkout([$class: 'GitSCM', 
-          branches: [[name: "${branchToBuildCRW}"]], 
-          doGenerateSubmoduleConfigurations: false, 
-          poll: true,
-          extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
-          submoduleCfg: [], 
-          userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-        installNPM(nodeVersion)
+      withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'), 
+        file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
+          checkout([$class: 'GitSCM', 
+            branches: [[name: "${branchToBuildCRW}"]], 
+            doGenerateSubmoduleConfigurations: false, 
+            poll: true,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]], 
+            submoduleCfg: [], 
+            userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
+          installNPM(nodeVersion)
 
-        def buildLog = ""
+          def buildLog = ""
 
-        sh '''#!/bin/bash -x 
+          sh '''#!/bin/bash -x 
 # REQUIRE: skopeo
 curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
 chmod +x /tmp/updateBaseImages.sh 
@@ -248,6 +250,7 @@ error /(?i)^error /
             }
         }
       }
+        } // with credentials
     }
 }
 
