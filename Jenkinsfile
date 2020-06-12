@@ -464,7 +464,7 @@ for targetN in target1 target2 target3; do
     # update base image
     cd ${WORKSPACE}/${targetN}
     OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-    /tmp/updateBaseImages.sh -b ''' + GIT_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/}
+    /tmp/updateBaseImages.sh -b ''' + GIT_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/} -q
     NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
     if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
     cd ..
