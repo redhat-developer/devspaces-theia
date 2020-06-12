@@ -92,6 +92,34 @@ timeout(180) {
 
         def buildLog = ""
 
+        sh '''#!/bin/bash -x 
+# REQUIRE: skopeo
+curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+chmod +x /tmp/updateBaseImages.sh 
+cd ${WORKSPACE}/crw-theia
+  git checkout --track origin/''' + branchToBuildCRW + ''' || true
+  export GITHUB_TOKEN=''' + GITHUB_TOKEN + ''' # echo "''' + GITHUB_TOKEN + '''"
+  git config user.email "nickboldt+devstudio-release@gmail.com"
+  git config user.name "Red Hat Devstudio Release Bot"
+  git config --global push.default matching
+  OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
+
+  # SOLVED :: Fatal: Could not read Username for "https://github.com", No such device or address :: https://github.com/github/hub/issues/1644
+  git remote -v
+  git config --global hub.protocol https
+  git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/redhat-developer/codeready-workspaces-theia.git
+  git remote -v
+
+  # update base images for the *.dockerfile in conf/ folder
+  for df in $(find ${WORKSPACE}/crw-theia/conf/ -name "*from*dockerfile"); do 
+    /tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${df%/*} -f ${df##*/} -q
+  done
+
+  NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
+  #if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
+cd ..
+'''
+
         // CRW-360 use RH NPM mirror
         // if ("${USE_PUBLIC_NEXUS}".equals("false")) {
         //     sh '''#!/bin/bash -xe 
@@ -307,11 +335,6 @@ cd ${WORKSPACE}/crw-theia
   git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/redhat-developer/codeready-workspaces-theia.git
   git remote -v
 
-  # update base images for the *.dockerfile in conf/ folder
-  for df in $(find ${WORKSPACE}/crw-theia/conf/ -name "*from*dockerfile"); do 
-    /tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${df%/*} -f ${df##*/} -q
-  done
-
   NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
   #if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
 cd ..
@@ -326,6 +349,8 @@ for targetN in target1 target2 target3; do
     git config user.email crw-build@REDHAT.COM
     git config user.name "CRW Build"
     git config --global push.default matching
+    git config --global hub.protocol https
+    git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/${GIT_PATH}.git
     cd ..
 done
 '''
