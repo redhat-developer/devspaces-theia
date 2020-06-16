@@ -331,15 +331,6 @@ cd ${WORKSPACE}/crw-theia
   git config user.name "Red Hat Devstudio Release Bot"
   git config --global push.default matching
   OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-
-  # SOLVED :: Fatal: Could not read Username for "https://github.com", No such device or address :: https://github.com/github/hub/issues/1644
-  git remote -v
-  git config --global hub.protocol https
-  git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/redhat-developer/codeready-workspaces-theia.git
-  git remote -v
-
-  NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
-  #if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
 cd ..
 for targetN in target1 target2 target3; do
     # fetch sources to be updated
@@ -352,8 +343,6 @@ for targetN in target1 target2 target3; do
     git config user.email crw-build@REDHAT.COM
     git config user.name "CRW Build"
     git config --global push.default matching
-    git config --global hub.protocol https
-    git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/${GIT_PATH}.git
     cd ..
 done
 '''
