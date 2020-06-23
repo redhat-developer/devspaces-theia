@@ -446,8 +446,12 @@ handle_che_theia() {
   popd >/dev/null
 
   # Set the CDN options inside the Dockerfile
-  sed_in_place -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
-  sed_in_place -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  sed_in_place -r -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  sed_in_place -r -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+
+  # verify that CDN is enabled
+  grep -E "https://static.developers.redhat.com/che/crw_theia_artifacts/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
+  grep -E "https://cdn.jsdelivr.net/npm/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
 
   # TODO: should we use some other Dockerfile?
   echo "-=-=-=- dockerfiles -=-=-=->"
