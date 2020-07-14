@@ -12,11 +12,16 @@ def buildNode = "rhel7-releng" // slave label
 def JOB_BRANCH = "master" // or stable-branch
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
-def nodeVersion = "10.19.0"
+def nodeVersion = "10.21.0"
 def installNPM(nodeVersion){
-    def yarnVersion="1.17.3"
-    def nodeHome = tool 'nodejs-'+nodeVersion
-    env.PATH="${nodeHome}/bin:${env.PATH}"
+    sh '''#!/bin/bash -xe
+    sudo yum install -y \
+      https://rpmfind.net/linux/centos/8.2.2004/AppStream/x86_64/os/Packages/nodejs-10.21.0-3.module_el8.2.0+391+8da3adc6.x86_64.rpm \
+      https://rpmfind.net/linux/centos/8.2.2004/AppStream/x86_64/os/Packages/npm-6.14.4-1.10.21.0.3.module_el8.2.0+391+8da3adc6.x86_64.rpm
+    '''
+    def yarnVersion="1.21.1"
+    // def nodeHome = tool 'nodejs-'+nodeVersion
+    // env.PATH="${nodeHome}/bin:${env.PATH}"
     sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
     if ("${USE_PUBLIC_NEXUS}".equals("false")) {
         sh '''#!/bin/bash -xe
