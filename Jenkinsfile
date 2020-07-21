@@ -12,7 +12,7 @@ def buildNode = "rhel7-releng" // slave label
 def JOB_BRANCH = "master" // or stable-branch
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
-def nodeVersion = "10.19.0"
+def nodeVersion = "12.16.1"
 def installNPM(nodeVersion){
     def yarnVersion="1.17.3"
     def nodeHome = tool 'nodejs-'+nodeVersion
