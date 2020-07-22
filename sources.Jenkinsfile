@@ -8,8 +8,7 @@
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
-def buildNode = "rhel7-releng" // slave label
-def JOB_BRANCH = "master" // or stable-branch
+def buildNode = "rhel7-releng" // node label
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
 def nodeVersion = "10.19.0"
@@ -489,37 +488,17 @@ done
   }
 }
 
-// star the containers job:
-{
+node("${buildNode}"){
+  stage "Build containers"
   build(
-          job: 'get-sources-rhpkg-container-build',
-          wait: true,
-          propagate: true,
+          job: 'crw-theia-containers',
+          wait: false,
+          propagate: false,
           parameters: [
-            [
-              $class: 'StringParameterValue',
-              name: 'GIT_PATHs',
-              value: "containers/codeready-workspaces-theia",
-            ],
-            [
-              $class: 'StringParameterValue',
-              name: 'GIT_BRANCH',
-              value: "crw-2.2-rhel-8",
-            ],
-            [
-              $class: 'StringParameterValue',
-              name: 'QUAY_REPO_PATHs',
-              value: "${QUAY_REPO_PATHs}",
-            ],
             [
               $class: 'StringParameterValue',
               name: 'SCRATCH',
               value: "${SCRATCH}",
-            ],
-            [
-              $class: 'StringParameterValue',
-              name: 'JOB_BRANCH',
-              value: "${JOB_BRANCH}",
             ]
           ]
         )
