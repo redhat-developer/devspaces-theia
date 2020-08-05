@@ -188,6 +188,7 @@ popd >/dev/null
 ok /Couldn't create directory: Failure/
 ok /warning .+ The engine "theiaPlugin" appears to be invalid./
 ok /warning .+ The engine "vscode" appears to be invalid./
+ok /\\[Warning\\] Disable async tests in .+/
 ok /\\[Warning\\] One or more build-args .+ were not consumed/
 ok /Error: No such image: .+/
 
