@@ -2,6 +2,7 @@
 
 // PARAMETERS for this pipeline:
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
+// GIT_BRANCH = crw-2.2-rhel-8
 
 def buildNode = "rhel7-releng" // node label
 def JOB_BRANCH = "master" // used to differentiate job URLs when pulling artifacts into dist-git
@@ -11,9 +12,14 @@ timeout(360) {
     stage "rhpkg container-builds"
 	  wrap([$class: 'TimestamperBuildWrapper']) {
 
+    def CRW_VERSION = sh(script: '''#!/bin/bash -xe
+    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + GIT_BRANCH + '''/dependencies/VERSION
+    ''', returnStdout: true)
+    println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
+
     echo "currentBuild.result = " + currentBuild.result
     if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
-
+      
         def QUAY_REPO_PATHs=(env.ghprbPullId && env.ghprbPullId?.trim()?"":("${SCRATCH}"=="true"?"":"theia-dev-rhel8"))
         echo "[INFO] Trigger get-sources-rhpkg-container-build " + (env.ghprbPullId && env.ghprbPullId?.trim()?"for PR-${ghprbPullId} ":"") + \
         "with SCRATCH = ${SCRATCH}, QUAY_REPO_PATHs = ${QUAY_REPO_PATHs}, JOB_BRANCH = ${JOB_BRANCH}"
@@ -32,7 +38,7 @@ timeout(360) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.2-rhel-8",
+              value: "${GIT_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',
@@ -70,7 +76,7 @@ timeout(360) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.2-rhel-8",
+              value: "${GIT_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',
@@ -108,7 +114,7 @@ timeout(360) {
             [
               $class: 'StringParameterValue',
               name: 'GIT_BRANCH',
-              value: "crw-2.2-rhel-8",
+              value: "${GIT_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',

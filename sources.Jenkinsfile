@@ -1,9 +1,9 @@
 #!/usr/bin/env groovy
 
 // PARAMETERS for this pipeline:
-// branchToBuildCRW = codeready-workspaces branch to build: */2.2.x or */master
+// branchToBuildCRW = codeready-workspaces branch to build: */master or */crw-2.4-rhel-8
 // THEIA_BRANCH = theia branch/tag to build: master (will then compute the correct SHA to use)
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.13.x
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.17.x
 // GITHUB_TOKEN = (github token)
 // USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
@@ -95,7 +95,7 @@ timeout(180) {
 
           sh '''#!/bin/bash -x 
 # REQUIRE: skopeo
-curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
 chmod +x /tmp/updateBaseImages.sh 
 cd ${WORKSPACE}/crw-theia
   git checkout --track origin/''' + branchToBuildCRW + ''' || true
@@ -368,9 +368,9 @@ done
       ''', returnStdout: true)
       println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
-      // TODO should this be a branch instead of just master?
+      // TODO make sure we're using the right branch
       CRW_VERSION = sh(script: '''#!/bin/bash -xe
-      wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/master/dependencies/VERSION
+      wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
       ''', returnStdout: true)
       println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
