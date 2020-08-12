@@ -25,7 +25,7 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH [options]
 
 Example:
-  $0 --ctb 7.14.x --all --no-cache --no-tests --rmi:tmp
+  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp
 
 Options: 
   $0 -d      | build theia-dev

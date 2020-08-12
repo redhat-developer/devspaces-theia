@@ -25,7 +25,7 @@ RUN if [[ ${GITHUB_TOKEN} == "YOUR_TOKEN_HERE" ]]; then \
 fi
 
 # set alternate branches and versions if required
-ARG CHE_THEIA_BRANCH=7.9.x
+ARG CHE_THEIA_BRANCH=7.17.x
 ARG THEIA_BRANCH=master
 ARG NODE_VERSION=10.19.0
 ARG YARN_VERSION=1.17.3
