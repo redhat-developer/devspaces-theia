@@ -262,7 +262,7 @@ handle_che_theia_dev() {
   ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global' > asset-yarn.tgz
+    /opt/app-root/src/.npm-global' > asset-yarn-$(uname -m).tgz
 
   popd >/dev/null
   
@@ -525,10 +525,10 @@ handle_che_theia_endpoint_runtime_binary() {
   #   /usr/local/share/.config/yarn/global'
   ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
-    /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn.tar.gz
+    /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz
   
   ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
-    'cd /home/theia/ && tar -pzcf - pre-assembly-nodejs-static' > asset-theia-endpoint-runtime-pre-assembly-nodejs-static.tar.gz
+    'cd /home/theia/ && tar -pzcf - pre-assembly-nodejs-static' > asset-theia-endpoint-runtime-pre-assembly-nodejs-static-$(uname -m).tar.gz
 
   # node-src
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}.tar.gz"
