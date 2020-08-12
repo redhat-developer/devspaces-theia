@@ -4,7 +4,7 @@
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // node label
-def JOB_BRANCH = "master" // not currently used to differentiate job URLs
+def JOB_BRANCH = "master" // used to differentiate job URLs when pulling artifacts into dist-git
 
 timeout(360) {
   node("${buildNode}"){

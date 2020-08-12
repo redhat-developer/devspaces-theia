@@ -185,7 +185,7 @@ popd >/dev/null
             writeFile(file: 'project.rules', text:
 '''
 # warnings/errors to ignore
-ok /Couldn't create directory: Failure/
+ok /Couldn''' + "'" + '''t create directory: Failure/
 ok /warning .+ The engine "theiaPlugin" appears to be invalid./
 ok /warning .+ The engine "vscode" appears to be invalid./
 ok /\\[Warning\\] Disable async tests in .+/
@@ -226,7 +226,7 @@ error /fatal: Remote branch/
 error /not found: manifest unknown/
 error /no space left on device/
 
-# match line starting with 'error ', case-insensitive
+# match line starting with "error ", case-insensitive
 error /(?i)^error /
 ''')
             try 
@@ -492,7 +492,7 @@ done
 node("${buildNode}"){
   stage "Build containers"
   build(
-          job: 'crw-theia-containers',
+          job: 'crw-theia-containers_master',
           wait: false,
           propagate: false,
           parameters: [
