@@ -10,6 +10,7 @@
 
 def List arches = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def Map tasks = [failFast: false]
+def String nodeLabel = "${arches[0]}"
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
 def nodeVersion = "10.19.0"
@@ -55,7 +56,7 @@ npm --version; yarn --version
 }
 
 for (int i=0; i < arches.size(); i++) {
-  def String nodeLabel = "${arches[i]}"
+  nodeLabel = "${arches[i]}"
   tasks[arches[i]] = { ->
     timeout(20) {
       node(nodeLabel) {
@@ -96,6 +97,8 @@ for (int i=0; i < arches.size(); i++) {
                   userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
               if (nodeLabel.equals("rhel7-releng")) {
                 installNPM(nodeVersion)
+              } else {
+                sh "docker system prune -af"
               }
 
               def buildLog = ""
@@ -497,31 +500,32 @@ for (int i=0; i < arches.size(); i++) {
         } // stage
       } // node
     } // timeout
-
-    node(nodeLabel) {
-      stage ("Build containers on ${nodeLabel}") {
-        CRW_VERSION = sh(script: '''#!/bin/bash -xe
-        wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
-        ''', returnStdout: true)
-        println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
-
-        build(
-                job: 'crw-theia-containers_' + CRW_VERSION,
-                wait: false,
-                propagate: false,
-                parameters: [
-                  [
-                    $class: 'StringParameterValue',
-                    name: 'SCRATCH',
-                    value: "${SCRATCH}",
-                  ]
-                ]
-              )
-        } // stage
-    } //node
   } // tasks
 } // for
 
 stage("Builds") {
     parallel(tasks)
 }
+
+nodeLabel = "${arches[0]}"
+node(nodeLabel) {
+  stage ("Build containers on ${nodeLabel}") {
+    CRW_VERSION = sh(script: '''#!/bin/bash -xe
+    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
+    ''', returnStdout: true)
+    println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
+
+    build(
+            job: 'crw-theia-containers_' + CRW_VERSION,
+            wait: false,
+            propagate: false,
+            parameters: [
+              [
+                $class: 'StringParameterValue',
+                name: 'SCRATCH',
+                value: "${SCRATCH}",
+              ]
+            ]
+          )
+    } // stage
+} //node
