@@ -268,7 +268,7 @@ for (int i=0; i < arches.size(); i++) {
     def GIT_PATH2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
     def GIT_PATH3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
 
-    def GIT_BRANCH = "crw-2.2-rhel-8" // target branch in dist-git repo, eg., crw-2.2-rhel-8
+    def GIT_BRANCH = "crw-2.4-rhel-8" // target branch in dist-git repo, eg., crw-2.2-rhel-8
     def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
     def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
     def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
