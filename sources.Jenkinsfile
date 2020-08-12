@@ -500,8 +500,13 @@ for (int i=0; i < arches.size(); i++) {
 
     node(nodeLabel) {
       stage ("Build containers on ${nodeLabel}") {
+        CRW_VERSION = sh(script: '''#!/bin/bash -xe
+        wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
+        ''', returnStdout: true)
+        println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
+
         build(
-                job: 'crw-theia-containers',
+                job: 'crw-theia-containers_' + CRW_VERSION,
                 wait: false,
                 propagate: false,
                 parameters: [
