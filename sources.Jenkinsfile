@@ -194,7 +194,7 @@ for (int i=0; i < arches.size(); i++) {
                 writeFile(file: 'project.rules', text:
     '''
     # warnings/errors to ignore
-    ok /Couldn''' + "'" + '''t create directory: Failure/
+    ok /Couldn.+ create directory: Failure/
     ok /warning .+ The engine "theiaPlugin" appears to be invalid./
     ok /warning .+ The engine "vscode" appears to be invalid./
     ok /\\[Warning\\] Disable async tests in .+/
@@ -235,7 +235,7 @@ for (int i=0; i < arches.size(); i++) {
     error /not found: manifest unknown/
     error /no space left on device/
 
-    # match line starting with "error ", case-insensitive
+    # match line starting with error, case-insensitive
     error /(?i)^error /
     ''')
                 try
