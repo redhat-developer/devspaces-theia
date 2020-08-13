@@ -506,9 +506,7 @@ stage("Builds") {
     parallel(tasks)
 }
 
-/*
-// TODO: create crw-theia-containers_2.4 job
-nodeLabel = "${arches[0]}"
+def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
     CRW_VERSION = sh(script: '''#!/bin/bash -xe
@@ -530,4 +528,3 @@ node(nodeLabel) {
           )
   } // stage
 } //node
-*/
