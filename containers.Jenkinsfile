@@ -1,8 +1,8 @@
 #!/usr/bin/env groovy
 
 // PARAMETERS for this pipeline:
+// DWNSTM_BRANCH = crw-2.4-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
-// GIT_BRANCH = crw-2.4-rhel-8
 
 def buildNode = "rhel7-releng" // node label
 // def JOB_BRANCH = CRW_VERSION // computed below; used to differentiate job URLs
@@ -13,7 +13,7 @@ timeout(360) {
 	  wrap([$class: 'TimestamperBuildWrapper']) {
 
     def CRW_VERSION = sh(script: '''#!/bin/bash -xe
-    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + GIT_BRANCH + '''/dependencies/VERSION
+    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + DWNSTM_BRANCH + '''/dependencies/VERSION
     ''', returnStdout: true)
     println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
@@ -37,8 +37,8 @@ timeout(360) {
             ],
             [
               $class: 'StringParameterValue',
-              name: 'GIT_BRANCH',
-              value: "${GIT_BRANCH}",
+              name: 'DWNSTM_BRANCH',
+              value: "${DWNSTM_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',
@@ -75,8 +75,8 @@ timeout(360) {
             ],
             [
               $class: 'StringParameterValue',
-              name: 'GIT_BRANCH',
-              value: "${GIT_BRANCH}",
+              name: 'DWNSTM_BRANCH',
+              value: "${DWNSTM_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',
@@ -113,8 +113,8 @@ timeout(360) {
             ],
             [
               $class: 'StringParameterValue',
-              name: 'GIT_BRANCH',
-              value: "${GIT_BRANCH}",
+              name: 'DWNSTM_BRANCH',
+              value: "${DWNSTM_BRANCH}",
             ],
             [
               $class: 'StringParameterValue',

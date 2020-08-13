@@ -2,7 +2,7 @@
 
 // PARAMETERS for this pipeline:
 // CHE_THEIA_BRANCH = che-theia branch to build: master, 7.17.x
-// MIDSTM_BRANCH = codeready-workspaces branch to build: crw-2.4-rhel-8
+// MIDSTM_BRANCH = codeready-workspaces-theia branch to build: crw-2.4-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 // other params not worth setting in Jenkins (they don't change)
@@ -269,13 +269,12 @@ for (int i=0; i < arches.size(); i++) {
       } // node
     } // timeout
 
-    //def SOURCE_BRANCH = MIDSTM_BRANCH // as of 2.4, use the same branch name as in dist-git
-    def SOURCE_REPO = "redhat-developer/codeready-workspaces-theia" //source repo from which to find and sync commits to pkgs.devel repo
-    def GIT_PATH1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to use as target
-    def GIT_PATH2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
-    def GIT_PATH3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
+    def MIDSTM_REPO = "redhat-developer/codeready-workspaces-theia" //source repo from which to find and sync commits to pkgs.devel repo
+    def DWNSTM_REPO1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to use as target
+    def DWNSTM_REPO2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
+    def DWNSTM_REPO3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
 
-    def GIT_BRANCH = MIDSTM_BRANCH // target branch in dist-git repo, eg., crw-2.4-rhel-8
+    def DWNSTM_BRANCH = MIDSTM_BRANCH // target branch in dist-git repo, eg., crw-2.4-rhel-8
     def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
     def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
     def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
@@ -349,12 +348,12 @@ for (int i=0; i < arches.size(); i++) {
     cd ..
     for targetN in target1 target2 target3; do
         # fetch sources to be updated
-        if [[ \$targetN == "target1" ]]; then GIT_PATH="''' + GIT_PATH1 + '''"; fi
-        if [[ \$targetN == "target2" ]]; then GIT_PATH="''' + GIT_PATH2 + '''"; fi
-        if [[ \$targetN == "target3" ]]; then GIT_PATH="''' + GIT_PATH3 + '''"; fi
-        if [[ ! -d ${WORKSPACE}/${targetN} ]]; then git clone ssh://crw-build@pkgs.devel.redhat.com/${GIT_PATH} ${targetN}; fi
+        if [[ \$targetN == "target1" ]]; then DWNSTM_REPO="''' + DWNSTM_REPO1 + '''"; fi
+        if [[ \$targetN == "target2" ]]; then DWNSTM_REPO="''' + DWNSTM_REPO2 + '''"; fi
+        if [[ \$targetN == "target3" ]]; then DWNSTM_REPO="''' + DWNSTM_REPO3 + '''"; fi
+        if [[ ! -d ${WORKSPACE}/${targetN} ]]; then git clone ssh://crw-build@pkgs.devel.redhat.com/${DWNSTM_REPO} ${targetN}; fi
         cd ${WORKSPACE}/${targetN}
-        git checkout --track origin/''' + GIT_BRANCH + ''' || true
+        git checkout --track origin/''' + DWNSTM_BRANCH + ''' || true
         git config user.email crw-build@REDHAT.COM
         git config user.name "CRW Build"
         git config --global push.default matching
@@ -460,18 +459,18 @@ for (int i=0; i < arches.size(); i++) {
           fi
         done
         git add Dockerfile
-        git commit -s -m "[sync] Update from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}" .
-        git push origin ''' + GIT_BRANCH + '''
+        git commit -s -m "[sync] Update from ''' + MIDSTM_REPO + ''' @ ${SRC_SHA1:0:8}" .
+        git push origin ''' + DWNSTM_BRANCH + '''
         NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
         if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
-        echo "[sync] Updated pkgs.devel @ ${NEW_SHA:0:8} from ''' + SOURCE_REPO + ''' @ ${SRC_SHA1:0:8}"
+        echo "[sync] Updated pkgs.devel @ ${NEW_SHA:0:8} from ''' + MIDSTM_REPO + ''' @ ${SRC_SHA1:0:8}"
         fi
         cd ..
 
         # update base image
         cd ${WORKSPACE}/${targetN}
         OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
-        /tmp/updateBaseImages.sh -b ''' + GIT_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/} -q
+        /tmp/updateBaseImages.sh -b ''' + DWNSTM_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/} -q
         NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
         if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
         cd ..
