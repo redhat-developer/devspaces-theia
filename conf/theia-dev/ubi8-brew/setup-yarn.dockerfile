@@ -1,3 +1,3 @@
 # Include yarn assets
-COPY asset-yarn.tgz /tmp/
-RUN tar xzf /tmp/asset-yarn.tgz -C / && rm -f /tmp/asset-yarn.tgz
+COPY asset-yarn-$(uname -m).tgz /tmp/
+RUN tar xzf /tmp/asset-yarn-$(uname -m).tgz -C / && rm -f /tmp/asset-yarn-$(uname -m).tgz

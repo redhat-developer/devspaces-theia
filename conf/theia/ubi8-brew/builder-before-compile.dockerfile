@@ -10,12 +10,12 @@ RUN node-gyp install
 RUN sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
 #ENDIF
 
-COPY asset-yarn.tar.gz asset-post-download-dependencies.tar.gz /tmp/
-RUN tar xzf /tmp/asset-yarn.tar.gz -C / && rm -f /tmp/asset-yarn.tar.gz && \
-    tar xzf /tmp/asset-post-download-dependencies.tar.gz -C / && rm -f /tmp/asset-post-download-dependencies.tar.gz
+COPY asset-yarn-$(uname -m).tar.gz asset-post-download-dependencies-$(uname -m).tar.gz /tmp/
+RUN tar xzf /tmp/asset-yarn-$(uname -m).tar.gz -C / && rm -f /tmp/asset-yarn-$(uname -m).tar.gz && \
+    tar xzf /tmp/asset-post-download-dependencies-$(uname -m).tar.gz -C / && rm -f /tmp/asset-post-download-dependencies-$(uname -m).tar.gz
 
 # Copy yarn.lock to be the same than the previous build
-COPY asset-yarn.lock ${HOME}/theia-source-code/yarn.lock
+COPY asset-yarn-$(uname -m).lock ${HOME}/theia-source-code/yarn.lock
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     puppeteer_skip_chromium_download=true
