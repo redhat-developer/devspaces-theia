@@ -10,7 +10,6 @@
 
 def List arches = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def Map tasks = [failFast: false]
-def String nodeLabel = "${arches[0]}"
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
 def nodeVersion = "10.19.0"
@@ -56,7 +55,7 @@ npm --version; yarn --version
 }
 
 for (int i=0; i < arches.size(); i++) {
-  nodeLabel = "${arches[i]}"
+  def String nodeLabel = "${arches[i]}"
   tasks[arches[i]] = { ->
     timeout(20) {
       node(nodeLabel) {
@@ -507,6 +506,8 @@ stage("Builds") {
     parallel(tasks)
 }
 
+/*
+// TODO: create crw-theia-containers_2.4 job
 nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
@@ -527,5 +528,6 @@ node(nodeLabel) {
               ]
             ]
           )
-    } // stage
+  } // stage
 } //node
+*/
