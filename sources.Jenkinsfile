@@ -1,12 +1,17 @@
 #!/usr/bin/env groovy
 
 // PARAMETERS for this pipeline:
-// branchToBuildCRW = codeready-workspaces branch to build: */crw-2.4-rhel-8
-// THEIA_BRANCH = theia branch/tag to build: master (will then compute the correct SHA to use)
 // CHE_THEIA_BRANCH = che-theia branch to build: master, 7.17.x
-// GITHUB_TOKEN = (github token)
-// USE_PUBLIC_NEXUS = true or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
+// MIDSTM_BRANCH = codeready-workspaces branch to build: crw-2.4-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
+
+// other params not worth setting in Jenkins (they don't change)
+def THEIA_BRANCH = "master" // theia branch/tag to build: master (will then compute the correct SHA to use)
+def THEIA_GITHUB_REPO = "eclipse-theia/theia" // default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
+def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-theia/blob/7.13.x/build.include#L16 (3f28503e754bbb4fa6534612af3d1ed6da3ed66a)
+                          // (or leave blank to compute within build.sh)
+def USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
+                              // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
 def List arches = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def Map tasks = [failFast: false]
@@ -88,7 +93,7 @@ for (int i=0; i < arches.size(); i++) {
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                 file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
               checkout([$class: 'GitSCM',
-                  branches: [[name: "${branchToBuildCRW}"]],
+                  branches: [[name: "${MIDSTM_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   poll: true,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]],
@@ -104,10 +109,10 @@ for (int i=0; i < arches.size(); i++) {
 
               sh '''#!/bin/bash -x
     # REQUIRE: skopeo
-    curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+    curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
     chmod +x /tmp/updateBaseImages.sh
     cd ${WORKSPACE}/crw-theia
-      git checkout --track origin/''' + branchToBuildCRW + ''' || true
+      git checkout --track origin/''' + MIDSTM_BRANCH + ''' || true
       export GITHUB_TOKEN=''' + GITHUB_TOKEN + ''' # echo "''' + GITHUB_TOKEN + '''"
       git config user.email "nickboldt+devstudio-release@gmail.com"
       git config user.name "Red Hat Devstudio Release Bot"
@@ -122,7 +127,7 @@ for (int i=0; i < arches.size(); i++) {
 
       # update base images for the *.dockerfile in conf/ folder
       for df in $(find ${WORKSPACE}/crw-theia/conf/ -name "*from*dockerfile"); do
-        /tmp/updateBaseImages.sh -b ''' + branchToBuildCRW + ''' -w ${df%/*} -f ${df##*/} -q
+        /tmp/updateBaseImages.sh -b ''' + MIDSTM_BRANCH + ''' -w ${df%/*} -f ${df##*/} -q
       done
 
       NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
@@ -187,7 +192,7 @@ for (int i=0; i < arches.size(); i++) {
                 archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
                 // TODO start collecting shas with "git rev-parse --short=4 HEAD"
-                def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${branchToBuildCRW}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_COMMIT_SHA} (${THEIA_BRANCH})"
+                def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${MIDSTM_BRANCH}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_COMMIT_SHA} (${THEIA_BRANCH})"
                 echo "${descriptString}"
                 currentBuild.description="${descriptString}"
 
@@ -264,13 +269,13 @@ for (int i=0; i < arches.size(); i++) {
       } // node
     } // timeout
 
-    //def SOURCE_BRANCH = branchToBuildCRW // as of 2.4, use the same branch name as in dist-git
+    //def SOURCE_BRANCH = MIDSTM_BRANCH // as of 2.4, use the same branch name as in dist-git
     def SOURCE_REPO = "redhat-developer/codeready-workspaces-theia" //source repo from which to find and sync commits to pkgs.devel repo
     def GIT_PATH1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to use as target
     def GIT_PATH2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
     def GIT_PATH3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
 
-    def GIT_BRANCH = branchToBuildCRW // target branch in dist-git repo, eg., crw-2.4-rhel-8
+    def GIT_BRANCH = MIDSTM_BRANCH // target branch in dist-git repo, eg., crw-2.4-rhel-8
     def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
     def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
     def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
@@ -290,7 +295,7 @@ for (int i=0; i < arches.size(); i++) {
               withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                   file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: "${branchToBuildCRW}"]],
+                    branches: [[name: "${MIDSTM_BRANCH}"]],
                     doGenerateSubmoduleConfigurations: false,
                     poll: true,
                     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]],
@@ -332,10 +337,10 @@ for (int i=0; i < arches.size(); i++) {
     hasChanged=0
 
     # REQUIRE: skopeo
-    curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+    curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
     chmod +x /tmp/updateBaseImages.sh
     cd ${WORKSPACE}/crw-theia
-      git checkout --track origin/''' + branchToBuildCRW + ''' || true
+      git checkout --track origin/''' + MIDSTM_BRANCH + ''' || true
       export GITHUB_TOKEN=''' + GITHUB_TOKEN + ''' # echo "''' + GITHUB_TOKEN + '''"
       git config user.email "nickboldt+devstudio-release@gmail.com"
       git config user.name "Red Hat Devstudio Release Bot"
@@ -380,7 +385,7 @@ for (int i=0; i < arches.size(); i++) {
 
                 // TODO make sure we're using the right branch
                 CRW_VERSION = sh(script: '''#!/bin/bash -xe
-                wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
+                wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
                 ''', returnStdout: true)
                 println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
@@ -510,7 +515,7 @@ def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
     CRW_VERSION = sh(script: '''#!/bin/bash -xe
-    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + branchToBuildCRW + '''/dependencies/VERSION
+    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
     ''', returnStdout: true)
     println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
