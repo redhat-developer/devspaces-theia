@@ -1,8 +1,8 @@
 USER root
 ENV YARN_FLAGS="--offline"
 ENV NEXE_FLAGS="--asset ${HOME}/pre-assembly-nodejs-static"
-COPY asset-theia-endpoint-runtime-pre-assembly-nodejs-static-$(uname -m).tar.gz asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz asset-node-src.tar.gz /tmp/
-RUN tar xzf /tmp/asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz -C / && rm -f /tmp/asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz && \
+COPY asset-theia-endpoint-runtime-pre-assembly-nodejs-static-*.tar.gz asset-theia-endpoint-runtime-binary-yarn-*.tar.gz asset-node-src.tar.gz /tmp/
+RUN tar xzf /tmp/asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz -C / && rm -f /tmp/asset-theia-endpoint-runtime-binary-yarn-*.tar.gz && \
     export NODE_VERSION=$(node --version | sed -s 's/v//') && mkdir -p "/home/theia/.nexe/${NODE_VERSION}" && tar zxf /tmp/asset-node-src.tar.gz --strip-components=1 -C "/home/theia/.nexe/${NODE_VERSION}" && \
     tar zxf /tmp/asset-theia-endpoint-runtime-pre-assembly-nodejs-static-$(uname -m).tar.gz -C "/home/theia/"
 
