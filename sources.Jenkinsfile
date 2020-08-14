@@ -96,7 +96,6 @@ for (int i=0; i < arches.size(); i++) {
               submoduleCfg: [],
               userRemoteConfigs: [[url: "https://github.com/eclipse/che-theia.git"]]])
             sh "rm -fr tmp"
-            echo "KRC0 currentBuild.result = " + currentBuild.result
           }
         }
       }
@@ -105,7 +104,6 @@ for (int i=0; i < arches.size(); i++) {
       node(nodeLabel) {
         stage ("Build CRW Theia on ${nodeLabel}") {
           wrap([$class: 'TimestamperBuildWrapper']) {
-            echo "KRC1 currentBuild.result = " + currentBuild.result
             cleanWs()
             sh "docker system prune -af"
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
@@ -137,13 +135,11 @@ for (int i=0; i < arches.size(); i++) {
       git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/redhat-developer/codeready-workspaces-theia.git
       git remote -v
 
-            echo "KRC2 currentBuild.result = " + currentBuild.result
       # update base images for the *.dockerfile in conf/ folder
       for df in $(find ${WORKSPACE}/crw-theia/conf/ -name "*from*dockerfile"); do
         /tmp/updateBaseImages.sh -b ''' + MIDSTM_BRANCH + ''' -w ${df%/*} -f ${df##*/} -q
       done
 
-            echo "KRC3 currentBuild.result = " + currentBuild.result
       NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
       #if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
     cd ..
@@ -178,7 +174,6 @@ for (int i=0; i < arches.size(); i++) {
                 echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA} from ${CHE_THEIA_BRANCH} branch"
               }
 
-            echo "KRC4 currentBuild.result = " + currentBuild.result
               def buildStatusCode = 0
               ansiColor('xterm') {
                   buildStatusCode = sh script:'''#!/bin/bash -xe
@@ -190,7 +185,6 @@ for (int i=0; i < arches.size(); i++) {
     popd >/dev/null
     ''', returnStatus: true
 
-            echo "KRC5 currentBuild.result = " + currentBuild.result
                 buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
                 if (buildStatusCode != 0 || buildLog.find(/returned a non-zero code:/)?.trim())
                 {
@@ -272,14 +266,12 @@ for (int i=0; i < arches.size(); i++) {
                     print "ERROR: LogParserPublisher failed: \n" +al
                 }
 
-            echo "KRC6 currentBuild.result = " + currentBuild.result
                 buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
                 if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
                 {
                     error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
                     currentBuild.result = 'FAILED'
                 }
-            echo "KRC7 currentBuild.result = " + currentBuild.result
               } // ansiColor
             } // with credentials
           } // wrap
@@ -321,7 +313,6 @@ for (int i=0; i < arches.size(); i++) {
                 // retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
                 unstash 'stashDockerfilesToSync'
 
-            echo "KRC8 currentBuild.result = " + currentBuild.result
                 def BOOTSTRAP = '''#!/bin/bash -xe
 
     # bootstrapping: if keytab is lost, upload to
@@ -381,7 +372,6 @@ for (int i=0; i < arches.size(); i++) {
     '''
                 sh BOOTSTRAP
 
-            echo "KRC9 currentBuild.result = " + currentBuild.result
                 SRC_SHA1 = sh(script: '''#!/bin/bash -xe
                 cd ${WORKSPACE}/crw-theia; git rev-parse HEAD
                 ''', returnStdout: true)
@@ -498,7 +488,6 @@ for (int i=0; i < arches.size(); i++) {
     '''
               } // with credentials
 
-            echo "KRC10 currentBuild.result = " + currentBuild.result
               def NEW_SHA1 = sh(script: '''#!/bin/bash -xe
               cd ${WORKSPACE}/target1; git rev-parse HEAD
               ''', returnStdout: true)
@@ -520,7 +509,6 @@ for (int i=0; i < arches.size(); i++) {
             } else {
               echo "[ERROR] Build status is " + currentBuild.result + " from previous stage. Skip!"
             }
-            echo "KRC11 currentBuild.result = " + currentBuild.result
           } // wrap
         } // stage
       } // node
