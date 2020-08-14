@@ -1,5 +1,7 @@
 #!/usr/bin/env groovy
 
+import groovy.transform.Field
+
 // PARAMETERS for this pipeline:
 // CHE_THEIA_BRANCH = che-theia branch to build: master, 7.17.x
 // MIDSTM_BRANCH = codeready-workspaces-theia branch to build: crw-2.4-rhel-8
@@ -10,7 +12,7 @@ def THEIA_BRANCH = "master" // theia branch/tag to build: master (will then comp
 def THEIA_GITHUB_REPO = "eclipse-theia/theia" // default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia
 def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-theia/blob/7.13.x/build.include#L16 (3f28503e754bbb4fa6534612af3d1ed6da3ed66a)
                           // (or leave blank to compute within build.sh)
-def USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
+@Field String USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
                               // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
 def List arches = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
@@ -20,8 +22,21 @@ def Map tasks = [failFast: false]
 def nodeVersion = "10.19.0"
 def installNPM(nodeVersion) {
   def yarnVersion="1.17.3"
-  def nodeHome = tool 'nodejs-'+nodeVersion
-  env.PATH="${nodeHome}/bin:${env.PATH}"
+
+  sh '''#!/bin/bash -e
+export LATEST_NVM="$(git ls-remote --refs --tags https://github.com/nvm-sh/nvm.git \
+          | cut --delimiter='/' --fields=3 | tr '-' '~'| sort --version-sort| tail --lines=1)"
+
+export NODE_VERSION=''' + nodeVersion + '''
+export METHOD=script
+export PROFILE=/dev/null
+curl -sS -o- https://raw.githubusercontent.com/nvm-sh/nvm/${LATEST_NVM}/install.sh | bash
+'''
+  def nodeHome = sh(script: '''#!/bin/bash -e
+source $HOME/.nvm/nvm.sh
+nvm use --silent ''' + nodeVersion + '''
+dirname $(nvm which node)''' , returnStdout: true).trim()
+  env.PATH="${nodeHome}:${env.PATH}"
   sh "echo USE_PUBLIC_NEXUS = ${USE_PUBLIC_NEXUS}"
   if ("${USE_PUBLIC_NEXUS}".equals("false")) {
       sh '''#!/bin/bash -xe
@@ -54,7 +69,7 @@ npm --version; yarn --version
         sh '''#!/bin/bash -xe
 rm -f ${HOME}/.npmrc ${HOME}/.yarnrc
 npm install --global yarn@''' + yarnVersion + '''
-npm --version; yarn --version
+node --version; npm --version; yarn --version
 '''
   }
 }
@@ -90,6 +105,7 @@ for (int i=0; i < arches.size(); i++) {
         stage ("Build CRW Theia on ${nodeLabel}") {
           wrap([$class: 'TimestamperBuildWrapper']) {
             cleanWs()
+            sh "docker system prune -af"
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                 file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
               checkout([$class: 'GitSCM',
@@ -99,14 +115,8 @@ for (int i=0; i < arches.size(); i++) {
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "crw-theia"]],
                   submoduleCfg: [],
                   userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
-              if (nodeLabel.equals("rhel7-releng")) {
-                installNPM(nodeVersion)
-              } else {
-                sh "docker system prune -af"
-              }
-
+              installNPM(nodeVersion)
               def buildLog = ""
-
               sh '''#!/bin/bash -x
     # REQUIRE: skopeo
     curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
