@@ -520,6 +520,7 @@ stage("Builds") {
     parallel(tasks)
 }
 
+/*
 def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
@@ -542,3 +543,4 @@ node(nodeLabel) {
           )
   } // stage
 } //node
+*/
