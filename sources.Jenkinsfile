@@ -167,7 +167,7 @@ for (int i=0; i < arches.size(); i++) {
 
               // NOTE: "--squash" is only supported on a Docker daemon with experimental features enabled
 
-              def BUILD_PARAMS="--nv ${nodeVersion} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
+              def BUILD_PARAMS="--nv ${nodeVersion} --cv ${CRW_VERSION} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
               if (!THEIA_COMMIT_SHA.equals("")) {
                 BUILD_PARAMS=BUILD_PARAMS+" --tcs ${THEIA_COMMIT_SHA}";
               } else {
