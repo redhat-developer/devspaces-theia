@@ -24,8 +24,9 @@ Usage:
   export GITHUB_TOKEN=*your token here*
   $0 --ctb CHE_THEIA_BRANCH [options]
 
-Example:
-  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp
+Examples:
+  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.4-rhel-8
+  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cv 2.4
 
 Options: 
   $0 -d      | build theia-dev
@@ -37,6 +38,8 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
 
+  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles
+  --cv       | rather than pull from CRW_BRANCH of redhat-developer/codeready-workspaces/dependencies/VERSION file, set a CRW_VERSION 
   --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, 
              | default: master; probably don't ever need to override this now that code checkout logic relies on master branch + a specific SHA
   --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, 
@@ -85,6 +88,8 @@ for key in "$@"; do
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
       '--tcs') THEIA_COMMIT_SHA="$2"; shift 2;;
+      '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
+      '--cv')  CRW_VERSION="$2"; shift 2;;
       '-d') STEPS="${STEPS} handle_che_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} handle_che_theia"; shift 1;;
       '-b') STEPS="${STEPS} handle_che_theia_endpoint_runtime_binary"; shift 1;;
@@ -100,6 +105,14 @@ for key in "$@"; do
       '--podmanflags')    PODMANFLAGS="$2"; shift 2;;
   esac
 done
+
+if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
+  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
+fi
+if [[ ! ${CRW_VERSION} ]]; then 
+  echo "Error: must set either --cb crw-2.4-rhel-8 or --cv 2.4 to define the version of CRW Theia to build."
+  usage
+fi
 
 # to build with podman if present, use --podman flag, else use docker
 if [[ ${PODMAN} ]]; then
@@ -233,6 +246,7 @@ handle_che_theia_dev() {
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8 "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8-brew
   # Add extra conf
   cp conf/theia-dev/ubi8-brew/* "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8-brew/
+  sed -E -e "s/@@CRW_VERSION@@/${CRW_VERSION}/g" -i "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8-brew/post-env.dockerfile
   
   # dry-run for theia-dev:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
@@ -339,7 +353,8 @@ handle_che_theia() {
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8 "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8-brew
   # Add extra conf
   cp conf/theia/ubi8-brew/* "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8-brew/
-  
+  sed -E -e "s/@@CRW_VERSION@@/${CRW_VERSION}/g" -i "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8-brew/runtime-post-env.dockerfile
+
   # dry-run for theia:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
@@ -506,6 +521,7 @@ handle_che_theia_endpoint_runtime_binary() {
 
   # Add extra conf
   cp conf/theia-endpoint-runtime-binary/ubi8-brew/* "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8-brew/
+  sed -E -e "s/@@CRW_VERSION@@/${CRW_VERSION}/g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8-brew/runtime-post-env.dockerfile
 
   # dry-run for theia-endpoint-runtime:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
