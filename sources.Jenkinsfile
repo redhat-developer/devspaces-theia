@@ -15,6 +15,10 @@ def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-t
 @Field String USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
                               // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
+@Field String CRW_VERSION = sh(script: '''#!/bin/bash -xe
+    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
+    ''', returnStdout: true).trim()
+
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List arches = NODES.tokenize(",").collect { it.trim() }
 def Map tasks = [failFast: false]
@@ -393,12 +397,6 @@ for (int i=0; i < arches.size(); i++) {
                 ''', returnStdout: true)
                 println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
-                // TODO make sure we're using the right branch
-                CRW_VERSION = sh(script: '''#!/bin/bash -xe
-                wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
-                ''', returnStdout: true)
-                println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
-
                 sh BOOTSTRAP + '''
     for targetN in target1 target2 target3; do
         if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
@@ -435,7 +433,7 @@ for (int i=0; i < arches.size(); i++) {
             `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
             -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
             `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
-            -e "s#(theia-.+):next#\\1:''' + CRW_VERSION.trim() + '''#g" \
+            -e "s#(theia-.+):next#\\1:''' + CRW_VERSION + '''#g" \
             > ${TARGETDOCKERFILE}
         else
             echo "[WARNING] ${SOURCEDOCKERFILE} does not exist, so cannot sync to ${TARGETDOCKERFILE}"
@@ -524,10 +522,6 @@ stage("Builds") {
 def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
-    CRW_VERSION = sh(script: '''#!/bin/bash -xe
-    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
-    ''', returnStdout: true)
-    println "Got CRW_VERSION = '" + CRW_VERSION.trim() + "'"
 
     build(
             job: 'crw-theia-containers_' + CRW_VERSION,
