@@ -15,7 +15,8 @@ def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-t
 @Field String USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
                               // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
-def List arches = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
+// Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
+def List arches = NODES.tokenize(",").collect { it.trim() }
 def Map tasks = [failFast: false]
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
