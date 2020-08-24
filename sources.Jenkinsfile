@@ -15,9 +15,15 @@ def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-t
 @Field String USE_PUBLIC_NEXUS = "true" // or false (if true, don't use https://repository.engineering.redhat.com/nexus/repository/registry.npmjs.org)
                               // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
-@Field String CRW_VERSION = sh(script: '''#!/bin/bash -xe
-curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION''', returnStdout: true).trim()
+@Field String CRW_VERSION_F = ""
 
+def String getCrwVersion(String MIDSTM_BRANCH) {
+  if (CRW_VERSION_F.equals("")) {
+    CRW_VERSION_F = sh(script: '''#!/bin/bash -xe
+    curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION''', returnStdout: true).trim()
+  }
+  return CRW_VERSION_F
+}
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List arches = NODES.tokenize(",").collect { it.trim() }
 def Map tasks = [failFast: false]
@@ -120,7 +126,7 @@ for (int i=0; i < arches.size(); i++) {
                   submoduleCfg: [],
                   userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
               installNPM(nodeVersion)
-
+              CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
               println "CRW_VERSION = '" + CRW_VERSION + "'"
 
               def buildLog = ""
@@ -399,6 +405,7 @@ for (int i=0; i < arches.size(); i++) {
                 ''', returnStdout: true)
                 println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
+                CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
                 println "CRW_VERSION = '" + CRW_VERSION + "'"
                 sh BOOTSTRAP + '''
     for targetN in target1 target2 target3; do
@@ -525,6 +532,7 @@ stage("Builds") {
 def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
+    CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
     println "CRW_VERSION = '" + CRW_VERSION + "'"
 
     build(
