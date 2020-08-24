@@ -16,8 +16,7 @@ def THEIA_COMMIT_SHA = "" // For 7.13+, look at https://github.com/eclipse/che-t
                               // TODO https://issues.redhat.com/browse/CRW-360 - eventually we should use RH npm mirror
 
 @Field String CRW_VERSION = sh(script: '''#!/bin/bash -xe
-    wget -qO- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION
-    ''', returnStdout: true).trim()
+curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/dependencies/VERSION''', returnStdout: true).trim()
 
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List arches = NODES.tokenize(",").collect { it.trim() }
@@ -121,6 +120,9 @@ for (int i=0; i < arches.size(); i++) {
                   submoduleCfg: [],
                   userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
               installNPM(nodeVersion)
+
+              println "CRW_VERSION = '" + CRW_VERSION + "'"
+
               def buildLog = ""
               sh '''#!/bin/bash -x
     # REQUIRE: skopeo
@@ -165,7 +167,7 @@ for (int i=0; i < arches.size(); i++) {
 
               // NOTE: "--squash" is only supported on a Docker daemon with experimental features enabled
 
-              def BUILD_PARAMS="--nv ${nodeVersion} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
+              def BUILD_PARAMS="--nv ${nodeVersion} --cv ${CRW_VERSION} --ctb ${CHE_THEIA_BRANCH} --tb ${THEIA_BRANCH} --tgr ${THEIA_GITHUB_REPO} -d -t -b --no-cache --rmi:all --no-async-tests"
               if (!THEIA_COMMIT_SHA.equals("")) {
                 BUILD_PARAMS=BUILD_PARAMS+" --tcs ${THEIA_COMMIT_SHA}";
               } else {
@@ -397,6 +399,7 @@ for (int i=0; i < arches.size(); i++) {
                 ''', returnStdout: true)
                 println "Got OLD_SHA3 in target3 folder: " + OLD_SHA3
 
+                println "CRW_VERSION = '" + CRW_VERSION + "'"
                 sh BOOTSTRAP + '''
     for targetN in target1 target2 target3; do
         if [[ \$targetN == "target1" ]]; then SRC_PATH="${WORKSPACE}/crw-theia/dockerfiles/''' + QUAY_PROJECT1 + '''"; fi
@@ -522,6 +525,7 @@ stage("Builds") {
 def String nodeLabel = "${arches[0]}"
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
+    println "CRW_VERSION = '" + CRW_VERSION + "'"
 
     build(
             job: 'crw-theia-containers_' + CRW_VERSION,
