@@ -474,6 +474,12 @@ for targetN in target1 target2 target3; do
         -i ${TARGETDOCKERFILE}
     fi
 
+    # update arches in container.yaml
+    cd ${WORKSPACE}/${targetN}
+    for arch in ''' + arches.join(" ") + ''' ; do
+      yq -iy '.platforms.only |= (.+ ["'$arch'"] | unique)' container.yaml
+    done
+
     # push changes in github to dist-git
     cd ${WORKSPACE}/${targetN}
     if [[ \$(git diff --name-only) ]]; then # file changed
