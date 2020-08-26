@@ -29,7 +29,7 @@ def List arches = NODES.tokenize(",").collect { it.trim() }
 def Map tasks = [failFast: false]
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
-def nodeVersion = "12.16.1"
+def nodeVersion = "12.18.2"
 def installNPM(nodeVersion) {
   def yarnVersion="1.17.3"
 
