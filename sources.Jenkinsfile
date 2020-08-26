@@ -321,6 +321,8 @@ timeout(120) {
   node(nodeLabel) {
     stage ("Sync repos on ${nodeLabel}") {
       wrap([$class: 'TimestamperBuildWrapper']) {
+        sh('pip install --user yq')
+        yq_bin = sh(script: 'python -m site --user-base', returnStdout:true).trim() + '/bin/yq'
         echo "currentBuild.result = " + currentBuild.result
         if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
 
@@ -479,7 +481,7 @@ for targetN in target1 target2 target3; do
     # update platforms in container.yaml
     cd ${WORKSPACE}/${targetN}
     for platform in ''' + platforms.join(" ") + ''' ; do
-      yq -iy '.platforms.only |= (.+ ["'$platform'"] | unique)' container.yaml
+      ''' + yq_bin + ''' -iy '.platforms.only |= (.+ ["'$platform'"] | unique)' container.yaml
     done
 
     # push changes in github to dist-git
