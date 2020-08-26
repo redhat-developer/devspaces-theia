@@ -75,7 +75,7 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
-nodeVersion="10.19.0" # version of node to use (aligned to version in ubi base images)
+nodeVersion="12.16.1" # version of node to use (aligned to version in ubi base images)
 
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
