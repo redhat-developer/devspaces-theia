@@ -25,7 +25,8 @@ def String getCrwVersion(String MIDSTM_BRANCH) {
   return CRW_VERSION_F
 }
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
-def List arches = NODES.tokenize(",").collect { it.trim() }
+def List build_nodes = NODES.tokenize(",").collect { it.trim() }
+def List platforms = [] // populate with architectures we are building artifacts on
 def Map tasks = [failFast: false]
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
@@ -84,9 +85,9 @@ node --version; npm --version; yarn --version
   }
 }
 
-for (int i=0; i < arches.size(); i++) {
-  def String nodeLabel = "${arches[i]}"
-  tasks[arches[i]] = { ->
+for (int i=0; i < build_nodes.size(); i++) {
+  def String nodeLabel = "${build_nodes[i]}"
+  tasks[build_nodes[i]] = { ->
     timeout(20) {
       node(nodeLabel) {
         stage ("Checkout Che Theia on ${nodeLabel}") {
@@ -116,6 +117,7 @@ for (int i=0; i < arches.size(); i++) {
           wrap([$class: 'TimestamperBuildWrapper']) {
             cleanWs()
             sh "docker system prune -af"
+            platforms.add(sh(script: '''uname -m''', returnStdout:true).trim())
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                 file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
               checkout([$class: 'GitSCM',
@@ -298,7 +300,7 @@ stage("Builds") {
     parallel(tasks)
 }
 
-def String nodeLabel = "${arches[0]}"
+def String nodeLabel = "${build_nodes[0]}"
 
 def MIDSTM_REPO = "redhat-developer/codeready-workspaces-theia" //source repo from which to find and sync commits to pkgs.devel repo
 def DWNSTM_REPO1 = "containers/codeready-workspaces-theia-dev" // dist-git repo to use as target
@@ -474,10 +476,10 @@ for targetN in target1 target2 target3; do
         -i ${TARGETDOCKERFILE}
     fi
 
-    # update arches in container.yaml
+    # update platforms in container.yaml
     cd ${WORKSPACE}/${targetN}
-    for arch in ''' + arches.join(" ") + ''' ; do
-      yq -iy '.platforms.only |= (.+ ["'$arch'"] | unique)' container.yaml
+    for platform in ''' + platforms.join(" ") + ''' ; do
+      yq -iy '.platforms.only |= (.+ ["'$platform'"] | unique)' container.yaml
     done
 
     # push changes in github to dist-git
