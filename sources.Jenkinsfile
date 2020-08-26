@@ -220,52 +220,52 @@ for (int i=0; i < arches.size(); i++) {
                 currentBuild.description="${descriptString}"
 
                 writeFile(file: 'project.rules', text:
-    '''
-    # warnings/errors to ignore
-    ok /Couldn.+ create directory: Failure/
-    ok /warning .+ The engine "theiaPlugin" appears to be invalid./
-    ok /warning .+ The engine "vscode" appears to be invalid./
-    ok /\\[Warning\\] Disable async tests in .+/
-    ok /\\[Warning\\] One or more build-args .+ were not consumed/
-    ok /Error: No such image: .+/
+'''
+# warnings/errors to ignore
+ok /Couldn.+ create directory: Failure/
+ok /warning .+ The engine "theiaPlugin" appears to be invalid./
+ok /warning .+ The engine "vscode" appears to be invalid./
+ok /\\[Warning\\] Disable async tests in .+/
+ok /\\[Warning\\] One or more build-args .+ were not consumed/
+ok /Error: No such image: .+/
 
-    # section starts: these are used to group errors and warnings found after the line; also creates a quick access link.
-    start /====== handle_.+/
-    start /Successfully built .+/
-    start /Successfully tagged .+/
-    start /Script run successfully:.+/
-    start /Build of .+ \\[OK\\].+/
-    start /docker build .+/
-    start /docker run .+/
-    start /docker tag .+/
-    start /Dockerfiles and tarballs generated.+/
-    start /Step [0-9/]+ : .+/
+# section starts: these are used to group errors and warnings found after the line; also creates a quick access link.
+start /====== handle_.+/
+start /Successfully built .+/
+start /Successfully tagged .+/
+start /Script run successfully:.+/
+start /Build of .+ \\[OK\\].+/
+start /docker build .+/
+start /docker run .+/
+start /docker tag .+/
+start /Dockerfiles and tarballs generated.+/
+start /Step [0-9/]+ : .+/
 
-    # warnings
-    warning /.+\\[WARNING\\].+/
-    warning /[Ww]arning/
-    warning /WARNING/
-    warning /Connection refused/
-    warning /error Package .+ refers to a non-existing file .+/
+# warnings
+warning /.+\\[WARNING\\].+/
+warning /[Ww]arning/
+warning /WARNING/
+warning /Connection refused/
+warning /error Package .+ refers to a non-existing file .+/
 
-    # errors
-    error / \\[ERROR\\] /
-    error /exec returned: .+/
-    error /returned a non-zero code/
-    error /ripgrep: Command failed/
-    error /The following error occurred/
-    error /Downloading ripgrep failed/
-    error /API rate limit exceeded/
-    error /error exit delayed from previous errors/
-    error /tar: .+: No such file or directory/
-    error /syntax error/
-    error /fatal: Remote branch/
-    error /not found: manifest unknown/
-    error /no space left on device/
+# errors
+error / \\[ERROR\\] /
+error /exec returned: .+/
+error /returned a non-zero code/
+error /ripgrep: Command failed/
+error /The following error occurred/
+error /Downloading ripgrep failed/
+error /API rate limit exceeded/
+error /error exit delayed from previous errors/
+error /tar: .+: No such file or directory/
+error /syntax error/
+error /fatal: Remote branch/
+error /not found: manifest unknown/
+error /no space left on device/
 
-    # match line starting with error, case-insensitive
-    error /(?i)^error /
-    ''')
+# match line starting with error, case-insensitive
+error /(?i)^error /
+''')
                 try
                 {
                     step([$class: 'LogParserPublisher',
