@@ -77,6 +77,8 @@ PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
 nodeVersion="12.18.2" # version of node to use (aligned to version in ubi base images)
 
+CRW_VERSION="" # must set this via cmdline
+MIDSTM_BRANCH="" # must set this via cmdline
 CHE_THEIA_BRANCH="master"
 THEIA_BRANCH="master"
 THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
