@@ -151,6 +151,7 @@ TMP_THEIA_BUILDER_IMAGE="che-theia-builder:tmp"
 TMP_THEIA_RUNTIME_IMAGE="che-theia-runtime:tmp"
 TMP_THEIA_ENDPOINT_BUILDER_IMAGE="che-theia-endpoint-builder:tmp"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
+TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="che-custom-nodejs-deasync:$nodeVersion"
 
 sed_in_place() {
     SHORT_UNAME=$(uname -s)
@@ -223,7 +224,10 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   CHE_THEIA_SHA=$(git rev-parse --short=4 HEAD); echo "CHE_THEIA_SHA=${CHE_THEIA_SHA}"
   yarn --ignore-scripts
   popd >/dev/null
-  
+
+  # clone che-custom-nodejs-deasync
+  git clone -b "master" --single-branch https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git "${TMP_DIR}"/che-custom-nodejs-deasync
+  if [[ ! -d "${TMP_DIR}"/che-custom-nodejs-deasync ]]; then echo "[ERR""OR] could not clone https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git !"; exit 1; fi
 fi
 
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
@@ -501,6 +505,13 @@ handle_che_theia() {
 
 # now do che-theia-endpoint-runtime-binary
 handle_che_theia_endpoint_runtime_binary() {
+  # build che-custom-nodejs-deasync
+  cd "${TMP_DIR}"/che-custom-nodejs-deasync
+  echo "$nodeVersion" > VERSION
+  ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
+    --build-arg NODE_VERSION=${nodeVersion}
+  sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1 ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
+
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
 
@@ -595,7 +606,7 @@ done
 # optional cleanup of generated images
 if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from container registry"
-  ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
+  ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BUILDER_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
 fi
 if [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete che-theia images from container registry"
