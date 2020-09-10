@@ -220,6 +220,7 @@ for (int i=0; i < build_nodes.size(); i++) {
                 def descriptString="Build #${BUILD_NUMBER} (${BUILD_TIMESTAMP}) <br/> :: crw-theia @ ${MIDSTM_BRANCH}, che-theia @ ${CHE_THEIA_BRANCH}, theia @ ${THEIA_COMMIT_SHA} (${THEIA_BRANCH})"
                 echo "${descriptString}"
                 currentBuild.description="${descriptString}"
+                echo "currentBuild.result = " + currentBuild.result
 
                 writeFile(file: 'project.rules', text:
 '''
@@ -287,6 +288,7 @@ error /(?i)^error /
                     error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
                     currentBuild.result = 'FAILED'
                 }
+                echo "currentBuild.result = " + currentBuild.result
               } // ansiColor
             } // with credentials
           } // wrap
@@ -543,10 +545,12 @@ done
 
 node(nodeLabel) {
   stage ("Build containers on ${nodeLabel}") {
-    CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
-    println "CRW_VERSION = '" + CRW_VERSION + "'"
+    echo "currentBuild.result = " + currentBuild.result
+    if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
+      CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
+      println "CRW_VERSION = '" + CRW_VERSION + "'"
 
-    build(
+      build(
             job: 'crw-theia-containers_' + CRW_VERSION,
             wait: false,
             propagate: false,
@@ -558,5 +562,6 @@ node(nodeLabel) {
               ]
             ]
           )
+    } // if
   } // stage
 } //node
