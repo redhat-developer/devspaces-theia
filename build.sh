@@ -505,11 +505,18 @@ handle_che_theia() {
 
 # now do che-theia-endpoint-runtime-binary
 handle_che_theia_endpoint_runtime_binary() {
-  # build che-custom-nodejs-deasync
-  cd "${TMP_DIR}"/che-custom-nodejs-deasync
-  echo "$nodeVersion" > VERSION
-  ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
-    --build-arg NODE_VERSION=${nodeVersion}
+  # build/pull che-custom-nodejs-deasync
+  nodeRepo=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f1)
+  ${DOCKER} pull ${nodeRepo}:$nodeVersion
+  if [[ $? -ne 0 ]] ; then
+    cd "${TMP_DIR}"/che-custom-nodejs-deasync
+    echo "$nodeVersion" > VERSION
+    ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
+      --build-arg NODE_VERSION=${nodeVersion}
+  else
+    docker tag ${nodeRepo}:$nodeVersion ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
+    docker rmi ${nodeRepo}:$nodeVersion
+  fi
   sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1 ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
 
   cd "${base_dir}"
