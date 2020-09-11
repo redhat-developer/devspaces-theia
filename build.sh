@@ -507,8 +507,8 @@ handle_che_theia() {
 handle_che_theia_endpoint_runtime_binary() {
   # build/pull che-custom-nodejs-deasync
   nodeRepo=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f1)
-  ${DOCKER} pull ${nodeRepo}:$nodeVersion
-  if [[ $? -ne 0 ]] ; then
+  { ${DOCKER} pull ${nodeRepo}:$nodeVersion; rc=$?; }
+  if [[ $rc -ne 0 ]] ; then
     cd "${TMP_DIR}"/che-custom-nodejs-deasync
     echo "$nodeVersion" > VERSION
     ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
