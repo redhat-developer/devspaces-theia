@@ -269,7 +269,6 @@ error /no space left on device/
 # match line starting with error, case-insensitive
 error /(?i)^error /
 ''')
-/*
                 try
                 {
                     step([$class: 'LogParserPublisher',
@@ -289,7 +288,6 @@ error /(?i)^error /
                     error "[ERROR] Build has failed with exit code " + buildStatusCode + "\n\n" + buildLog
                     currentBuild.result = 'FAILED'
                 }
-*/
                 echo "currentBuild.result = " + currentBuild.result
               } // ansiColor
             } // with credentials
