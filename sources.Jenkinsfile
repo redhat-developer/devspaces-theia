@@ -269,6 +269,7 @@ error /no space left on device/
 # match line starting with error, case-insensitive
 error /(?i)^error /
 ''')
+/*
                 try
                 {
                     step([$class: 'LogParserPublisher',
@@ -281,6 +282,7 @@ error /(?i)^error /
                 {
                     print "ERROR: LogParserPublisher failed: \n" +al
                 }
+*/
 
                 buildLog = readFile("${WORKSPACE}/logs/crw-theia_buildlog.txt").trim()
                 if (buildStatusCode != 0 || buildLog.find(/Command failed|exit code/)?.trim())
