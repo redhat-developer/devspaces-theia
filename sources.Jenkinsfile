@@ -325,7 +325,7 @@ timeout(120) {
   node(nodeLabel) {
     stage ("Sync repos on ${nodeLabel}") {
       wrap([$class: 'TimestamperBuildWrapper']) {
-        sh('pip install --user yq')
+        sh('pip install -I --user yq')
         yq_bin = sh(script: 'python -m site --user-base', returnStdout:true).trim() + '/bin/yq'
         echo "currentBuild.result = " + currentBuild.result
         if (!currentBuild.result.equals("ABORTED") && !currentBuild.result.equals("FAILED")) {
