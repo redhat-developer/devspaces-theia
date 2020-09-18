@@ -533,6 +533,10 @@ for targetN in target1 target2 target3; do
     # update base image
     cd ${WORKSPACE}/${targetN}
     OLD_SHA=\$(git rev-parse HEAD) # echo ${OLD_SHA:0:8}
+    which skopeo
+    skopeo --version
+    export PATH=/usr/local/bin:$PATH
+    which skopeo
     /tmp/updateBaseImages.sh -b ''' + DWNSTM_BRANCH + ''' -w ${TARGETDOCKERFILE%/*} -f ${TARGETDOCKERFILE##*/} -q
     NEW_SHA=\$(git rev-parse HEAD) # echo ${NEW_SHA:0:8}
     if [[ "${OLD_SHA}" != "${NEW_SHA}" ]]; then hasChanged=1; fi
