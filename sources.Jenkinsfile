@@ -24,6 +24,27 @@ def String getCrwVersion(String MIDSTM_BRANCH) {
   }
   return CRW_VERSION_F
 }
+
+def installSkopeo(String CRW_VERSION)
+{
+sh '''#!/bin/bash -xe
+pushd /tmp >/dev/null
+# remove any older versions
+sudo yum remove -y skopeo || true
+# install from @kcrane build
+if [[ ! -x /usr/local/bin/skopeo ]]; then
+    sudo curl -sSLO "https://codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/job/crw-deprecated_''' + CRW_VERSION + '''/lastSuccessfulBuild/artifact/codeready-workspaces-deprecated/skopeo/target/skopeo-$(uname -m).tar.gz"
+fi
+if [[ -f /tmp/skopeo-$(uname -m).tar.gz ]]; then
+    sudo tar xzf /tmp/skopeo-$(uname -m).tar.gz --overwrite -C /usr/local/bin/
+    sudo chmod 755 /usr/local/bin/skopeo
+    sudo rm -f /tmp/skopeo-$(uname -m).tar.gz
+fi
+popd >/dev/null
+skopeo --version
+'''
+}
+
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List build_nodes = NODES.tokenize(",").collect { it.trim() }
 def List platforms = [] // populate with architectures we are building artifacts on
@@ -130,6 +151,7 @@ for (int i=0; i < build_nodes.size(); i++) {
               installNPM(nodeVersion)
               CRW_VERSION = getCrwVersion(MIDSTM_BRANCH)
               println "CRW_VERSION = '" + CRW_VERSION + "'"
+              installSkopeo(CRW_VERSION)
 
               def buildLog = ""
               sh '''#!/bin/bash -x
