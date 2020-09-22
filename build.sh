@@ -25,8 +25,8 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH [options]
 
 Examples:
-  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.4-rhel-8
-  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cv 2.4
+  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.5-rhel-8
+  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cv 2.5
 
 Options: 
   $0 -d      | build theia-dev
@@ -112,7 +112,7 @@ if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
   CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${CRW_VERSION} ]]; then 
-  echo "Error: must set either --cb crw-2.4-rhel-8 or --cv 2.4 to define the version of CRW Theia to build."
+  echo "Error: must set either --cb crw-2.5-rhel-8 or --cv 2.5 to define the version of CRW Theia to build."
   usage
 fi
 

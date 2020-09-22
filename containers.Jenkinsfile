@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 // PARAMETERS for this pipeline:
-// DWNSTM_BRANCH = crw-2.4-rhel-8
+// DWNSTM_BRANCH = crw-2.5-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 def buildNode = "rhel7-releng" // node label

@@ -3,8 +3,8 @@
 import groovy.transform.Field
 
 // PARAMETERS for this pipeline:
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.17.x
-// MIDSTM_BRANCH = codeready-workspaces-theia branch to build: crw-2.4-rhel-8
+// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.20.x
+// MIDSTM_BRANCH = codeready-workspaces-theia branch to build: crw-2.5-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
 // other params not worth setting in Jenkins (they don't change)
@@ -333,7 +333,7 @@ def DWNSTM_REPO1 = "containers/codeready-workspaces-theia-dev" // dist-git repo 
 def DWNSTM_REPO2 = "containers/codeready-workspaces-theia" // dist-git repo to use as target
 def DWNSTM_REPO3 = "containers/codeready-workspaces-theia-endpoint" // dist-git repo to use as target
 
-def DWNSTM_BRANCH = MIDSTM_BRANCH // target branch in dist-git repo, eg., crw-2.4-rhel-8
+def DWNSTM_BRANCH = MIDSTM_BRANCH // target branch in dist-git repo, eg., crw-2.5-rhel-8
 def QUAY_PROJECT1 = "theia-dev" // also used for the Brew dockerfile params
 def QUAY_PROJECT2 = "theia" // also used for the Brew dockerfile params
 def QUAY_PROJECT3 = "theia-endpoint" // also used for the Brew dockerfile params
