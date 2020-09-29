@@ -1,8 +1,11 @@
 #!/usr/bin/env groovy
 
+import groovy.transform.Field
+
 // PARAMETERS for this pipeline:
-// DWNSTM_BRANCH = crw-2.5-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
+
+@Field String DWNSTM_BRANCH = "crw-2.5-rhel-8" // branch in GH repo, eg., crw-2.5-rhel-8
 
 def buildNode = "rhel7-releng" // node label
 // def JOB_BRANCH = CRW_VERSION // computed below; used to differentiate job URLs

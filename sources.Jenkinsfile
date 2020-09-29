@@ -3,9 +3,10 @@
 import groovy.transform.Field
 
 // PARAMETERS for this pipeline:
-// CHE_THEIA_BRANCH = che-theia branch to build: master, 7.20.x
-// MIDSTM_BRANCH = codeready-workspaces-theia branch to build: crw-2.5-rhel-8
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
+
+@Field String CHE_THEIA_BRANCH = "7.19.x" // che-theia branch to build
+@Field String MIDSTM_BRANCH = "crw-2.5-rhel-8" // branch in GH repo, eg., crw-2.5-rhel-8
 
 // other params not worth setting in Jenkins (they don't change)
 def THEIA_BRANCH = "master" // theia branch/tag to build: master (will then compute the correct SHA to use)
@@ -46,7 +47,7 @@ skopeo --version
 }
 
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
-def List build_nodes = NODES.tokenize(",").collect { it.trim() }
+def List build_nodes = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List platforms = [] // populate with architectures we are building artifacts on
 def Map tasks = [failFast: false]
 
