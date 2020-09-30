@@ -34,7 +34,8 @@ pushd /tmp >/dev/null
 sudo yum remove -y skopeo || true
 # install from @kcrane build
 if [[ ! -x /usr/local/bin/skopeo ]]; then
-    sudo curl -sSLO "https://codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/job/crw-deprecated_''' + CRW_VERSION + '''/lastSuccessfulBuild/artifact/codeready-workspaces-deprecated/skopeo/target/skopeo-$(uname -m).tar.gz"
+    # note, need -k for insecure connection or ppc64le node dies
+    sudo curl -ksSLO "https://codeready-workspaces-jenkins.rhev-ci-vms.eng.rdu2.redhat.com/job/crw-deprecated_''' + CRW_VERSION + '''/lastSuccessfulBuild/artifact/codeready-workspaces-deprecated/skopeo/target/skopeo-$(uname -m).tar.gz"
 fi
 if [[ -f /tmp/skopeo-$(uname -m).tar.gz ]]; then
     sudo tar xzf /tmp/skopeo-$(uname -m).tar.gz --overwrite -C /usr/local/bin/
@@ -63,7 +64,7 @@ export LATEST_NVM="$(git ls-remote --refs --tags https://github.com/nvm-sh/nvm.g
 export NODE_VERSION=''' + nodeVersion + '''
 export METHOD=script
 export PROFILE=/dev/null
-curl -sS -o- https://raw.githubusercontent.com/nvm-sh/nvm/${LATEST_NVM}/install.sh | bash
+curl -sSLo- https://raw.githubusercontent.com/nvm-sh/nvm/${LATEST_NVM}/install.sh | bash
 '''
   def nodeHome = sh(script: '''#!/bin/bash -e
 source $HOME/.nvm/nvm.sh
@@ -157,7 +158,7 @@ for (int i=0; i < build_nodes.size(); i++) {
               def buildLog = ""
               sh '''#!/bin/bash -x
     # REQUIRE: skopeo
-    curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+    curl -ssL https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
     chmod +x /tmp/updateBaseImages.sh
     cd ${WORKSPACE}/crw-theia
       git checkout --track origin/''' + MIDSTM_BRANCH + ''' || true
@@ -398,7 +399,7 @@ klist # verify working
 hasChanged=0
 
 # REQUIRE: skopeo
-curl -L -s -S https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
+curl -sSL https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/''' + MIDSTM_BRANCH + '''/product/updateBaseImages.sh -o /tmp/updateBaseImages.sh
 chmod +x /tmp/updateBaseImages.sh
 cd ${WORKSPACE}/crw-theia
   git checkout --track origin/''' + MIDSTM_BRANCH + ''' || true
