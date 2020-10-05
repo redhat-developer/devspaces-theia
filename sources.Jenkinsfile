@@ -244,16 +244,16 @@ for (int i=0; i < build_nodes.size(); i++) {
                 ls -laR ${WORKSPACE}/crw-theia/dockerfiles/
                 echo "======================================"
                 cd ${WORKSPACE}/crw-theia/
-                git status -m || true
+                git status -s || true
                 git diff || true
 
                 cd ${WORKSPACE}
                 '''
                 stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
                 sh '''#!/bin/bash +x
-                find ${WORKSPACE} -n "stashDockerfilesToSync*"
+                find ${WORKSPACE} -name "stashDockerfilesToSync*" || true
                 echo "======================================"
-                find / -n "stashDockerfilesToSync*"
+                find / -name "stashDockerfilesToSync*" || true
                 '''
 
                 archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
