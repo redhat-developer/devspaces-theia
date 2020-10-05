@@ -236,7 +236,25 @@ for (int i=0; i < build_nodes.size(); i++) {
                   currentBuild.result = 'FAILED'
                 }
 
+                sh '''#!/bin/bash +x
+                echo "[INFO] Files to stash between stages:"
+                echo "======================================"
+                ls -laR crw-theia/dockerfiles/
+                echo "======================================"
+                ls -laR ${WORKSPACE}/crw-theia/dockerfiles/
+                echo "======================================"
+                cd ${WORKSPACE}/crw-theia/
+                git status -m || true
+                git diff || true
+
+                cd ${WORKSPACE}
+                '''
                 stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
+                sh '''#!/bin/bash +x
+                find ${WORKSPACE} -n "stashDockerfilesToSync*"
+                echo "======================================"
+                find / -n "stashDockerfilesToSync*"
+                '''
 
                 archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
@@ -364,7 +382,14 @@ timeout(120) {
                 submoduleCfg: [],
                 userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
             // retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
-            unstash 'stashDockerfilesToSync'
+            sh '''#!/bin/bash +x
+            find ${WORKSPACE} -n "stashDockerfilesToSync*"
+            echo "======================================"
+            find / -n "stashDockerfilesToSync*"
+            '''
+            dir("${WORKSPACE}") {
+              unstash 'stashDockerfilesToSync'
+            }
 
             def BOOTSTRAP = '''#!/bin/bash -xe
 
