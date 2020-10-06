@@ -48,7 +48,7 @@ skopeo --version
 }
 
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
-def List build_nodes = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
+def List build_nodes = ['rhel7-releng'] // , 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def List platforms = [] // populate with architectures we are building artifacts on
 def Map tasks = [failFast: false]
 
