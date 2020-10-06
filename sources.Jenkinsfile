@@ -251,11 +251,12 @@ for (int i=0; i < build_nodes.size(); i++) {
                 '''
                 stash name: 'stashDockerfilesToSync', includes: findFiles(glob: 'crw-theia/dockerfiles/**').join(", ")
                 sh '''#!/bin/bash +x
+                echo "==stash====================================>"
                 find ${WORKSPACE} -name "stashDockerfilesToSync*" || true
                 echo "======================================"
                 find / -name "stashDockerfilesToSync*" || true
+                echo "<====================================stash=="
                 '''
-
                 archiveArtifacts fingerprint: true, onlyIfSuccessful: true, allowEmptyArchive: false, artifacts: "crw-theia/dockerfiles/**, logs/*"
 
                 // TODO start collecting shas with "git rev-parse --short=4 HEAD"
@@ -383,9 +384,11 @@ timeout(120) {
                 userRemoteConfigs: [[url: "https://github.com/redhat-developer/codeready-workspaces-theia.git"]]])
             // retrieve files in crw-theia/dockerfiles/theia-dev, crw-theia/dockerfiles/theia, crw-theia/dockerfiles/theia-endpoint-runtime-binary
             sh '''#!/bin/bash +x
-            find ${WORKSPACE} -n "stashDockerfilesToSync*"
+            echo "==unstash====================================>"
+            find ${WORKSPACE} -name "stashDockerfilesToSync*"
             echo "======================================"
-            find / -n "stashDockerfilesToSync*"
+            find / -name "stashDockerfilesToSync*"
+            echo "<====================================unstash=="
             '''
             dir("${WORKSPACE}") {
               unstash 'stashDockerfilesToSync'
