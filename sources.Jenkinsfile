@@ -48,8 +48,7 @@ skopeo --version
 }
 
 // Nodes to run artifact build on ex. ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
-def List build_nodes = ['rhel7-releng'] // , 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
-def List platforms = [] // populate with architectures we are building artifacts on
+def List build_nodes = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-beaker']
 def Map tasks = [failFast: false]
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
@@ -140,7 +139,6 @@ for (int i=0; i < build_nodes.size(); i++) {
           wrap([$class: 'TimestamperBuildWrapper']) {
             cleanWs()
             sh "docker system prune -af"
-            platforms.add(sh(script: '''uname -m''', returnStdout:true).trim())
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                 file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
               checkout([$class: 'GitSCM',
