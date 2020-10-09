@@ -151,6 +151,7 @@ timeout(120) {
                 fi
               done
               git add Dockerfile
+              git add container.yaml
               git commit -s -m "[sync] Update from ''' + MIDSTM_REPO + ''' @ ''' + SRC_SHA1[0..7] + '''"
               git push origin ''' + DWNSTM_BRANCH + '''
             fi
