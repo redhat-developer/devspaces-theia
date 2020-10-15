@@ -5,7 +5,7 @@ import groovy.transform.Field
 // PARAMETERS for this pipeline:
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
 
-@Field String CHE_THEIA_BRANCH = "7.19.x" // che-theia branch to build
+@Field String CHE_THEIA_BRANCH = "7.20.x" // che-theia branch to build
 @Field String MIDSTM_BRANCH = "crw-2.5-rhel-8" // branch in GH repo, eg., crw-2.5-rhel-8
 
 // other params not worth setting in Jenkins (they don't change)
