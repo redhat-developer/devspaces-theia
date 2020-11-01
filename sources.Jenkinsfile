@@ -55,7 +55,6 @@ def Map tasks = [failFast: false]
 def nodeVersion = "12.18.2"
 def installNPM(nodeVersion) {
   def yarnVersion="1.17.3"
-
   sh '''#!/bin/bash -e
 export LATEST_NVM="$(git ls-remote --refs --tags https://github.com/nvm-sh/nvm.git \
           | cut --delimiter='/' --fields=3 | tr '-' '~'| sort --version-sort| tail --lines=1)"
