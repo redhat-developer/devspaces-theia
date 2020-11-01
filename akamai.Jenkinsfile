@@ -38,7 +38,7 @@ timeout(30) {
                             returnStdout: true
                         ).trim()
                     def latestTheiaImage = "registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-theia-rhel8:" + latestTheiaImageTag
-                    currentBuild.description="Add CDN support for " + latestTheiaImage
+                    currentBuild.description="Add CDN support for " + latestTheiaImageTag
 
                     sh('''#!/bin/bash -xe
 echo "[INFO] Add CDN support for ''' + latestTheiaImage + '''"
@@ -77,7 +77,7 @@ echo "[WARN] No /home/theia/lib/cdn.json found in ''' + latestTheiaImage + ''' -
 fi
 docker rm "theia-container" >/dev/null
                     ''')
-                    currentBuild.description="CDN support added for " + latestTheiaImage
+                    currentBuild.description="CDN support added for " + latestTheiaImageTag
                     } // with
             } // wrap
         } // stage
