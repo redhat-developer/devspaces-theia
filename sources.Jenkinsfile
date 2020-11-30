@@ -137,7 +137,7 @@ for (int i=0; i < build_nodes.size(); i++) {
         stage ("Build CRW Theia on ${nodeLabel}") {
           wrap([$class: 'TimestamperBuildWrapper']) {
             cleanWs()
-            sh "docker system prune -af"
+            sh "docker system prune -af || true"
             withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN'),
                 file(credentialsId: 'crw-build.keytab', variable: 'CRW_KEYTAB')]) {
               checkout([$class: 'GitSCM',
