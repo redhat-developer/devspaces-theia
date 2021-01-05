@@ -75,7 +75,9 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
-nodeVersion="12.18.2" # version of node to use (aligned to version in ubi base images)
+nodeVersion="12.19.1" # version of node to use (aligned to version in ubi base images)
+# see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
+# podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
 
 CRW_VERSION="" # must set this via cmdline
 MIDSTM_BRANCH="" # must set this via cmdline
@@ -562,10 +564,14 @@ handle_che_theia_endpoint_runtime_binary() {
   ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn-$(uname -m).tar.gz
-  
-  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
-    'cd /home/theia/ && tar -pzcf - pre-assembly-nodejs-static' > asset-theia-endpoint-runtime-pre-assembly-nodejs-static-$(uname -m).tar.gz
 
+  # new path for 7.23
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
+    'cd /tmp && tar -pzcf - nexe-cache' > asset-theia-endpoint-runtime-pre-assembly-nexe-cache-$(uname -m).tar.gz
+  # new tarball for 7.23
+  ${DOCKERRUN} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
+    'cd /tmp && tar -pzcf - nexe' > asset-theia-endpoint-runtime-pre-assembly-nexe-$(uname -m).tar.gz
+ 
   # node-src
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}.tar.gz"
   echo -n "Local node version: "; node --version
