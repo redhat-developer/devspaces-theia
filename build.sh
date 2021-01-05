@@ -75,7 +75,9 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
-nodeVersion="12.18.4" # version of node to use (aligned to version in ubi base images)
+nodeVersion="12.19.1" # version of node to use (aligned to version in ubi base images)
+# see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
+# podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
 
 CRW_VERSION="" # must set this via cmdline
 MIDSTM_BRANCH="" # must set this via cmdline

@@ -52,7 +52,7 @@ def List build_nodes = ['rhel7-releng', 's390x-rhel7-beaker', 'ppc64le-rhel7-bea
 def Map tasks = [failFast: false]
 
 // DO NOT CHANGE THIS until a newer version exists in ubi images used to build crw-theia, or build will fail.
-def nodeVersion = "12.18.2"
+def nodeVersion = "12.19.1"
 def installNPM(nodeVersion) {
   def yarnVersion="1.17.3"
   sh '''#!/bin/bash -e
