@@ -75,9 +75,14 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
-nodeVersion="12.19.1" # version of node to use (aligned to version in ubi base images)
+
+nodeVersion="12.19.1" # version of node to use for theia containers (aligned to version in ubi base images)
 # see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
 # podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
+
+nodeVersionDeAsync="12.20.0" # version of node to use for nodejs-deasync container (aligned to version/tag of alpine image)
+# see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
+# TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI based build, not alpine
 
 CRW_VERSION="" # must set this via cmdline
 MIDSTM_BRANCH="" # must set this via cmdline
@@ -153,7 +158,7 @@ TMP_THEIA_BUILDER_IMAGE="che-theia-builder:tmp"
 TMP_THEIA_RUNTIME_IMAGE="che-theia-runtime:tmp"
 TMP_THEIA_ENDPOINT_BUILDER_IMAGE="che-theia-endpoint-builder:tmp"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="che-theia-endpoint-binary-builder:tmp"
-TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="che-custom-nodejs-deasync:$nodeVersion"
+TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="che-custom-nodejs-deasync:$nodeVersionDeAsync"
 
 sed_in_place() {
     SHORT_UNAME=$(uname -s)
@@ -507,18 +512,11 @@ handle_che_theia() {
 
 # now do che-theia-endpoint-runtime-binary
 handle_che_theia_endpoint_runtime_binary() {
-  # build/pull che-custom-nodejs-deasync
-  nodeRepo=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f1)
-  { ${DOCKER} pull ${nodeRepo}:$nodeVersion; rc=$?; } || true
-  if [[ $rc -ne 0 ]] ; then
-    cd "${TMP_DIR}"/che-custom-nodejs-deasync
-    echo "$nodeVersion" > VERSION
-    ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
-      --build-arg NODE_VERSION=${nodeVersion}
-  else
-    docker tag ${nodeRepo}:$nodeVersion ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
-    docker rmi ${nodeRepo}:$nodeVersion
-  fi
+  # build che-custom-nodejs-deasync
+  cd "${TMP_DIR}"/che-custom-nodejs-deasync
+  echo "$nodeVersion" > VERSION
+  # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI based build, not alpine
+  ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} --build-arg NODE_VERSION=${nodeVersionDeAsync}
   sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1 ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
 
   cd "${base_dir}"
