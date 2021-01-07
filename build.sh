@@ -67,6 +67,8 @@ Cleanup options:
 }
 if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 
+# NOTE: SElinux needs to be permissive or disabled to volume mount a container to extract file(s)
+
 STEPS=""
 DELETE_TMP_IMAGES=0
 DELETE_ALL_IMAGES=0
