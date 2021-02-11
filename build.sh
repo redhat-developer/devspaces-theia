@@ -25,8 +25,8 @@ Usage:
   $0 --ctb CHE_THEIA_BRANCH [options]
 
 Examples:
-  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.5-rhel-8
-  $0 --ctb 7.17.x --all --no-cache --no-tests --rmi:tmp --cv 2.5
+  $0 --ctb 7.yy.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.y-rhel-8
+  $0 --ctb 7.yy.x --all --no-cache --no-tests --rmi:tmp --cv 2.y
 
 Options: 
   $0 -d      | build theia-dev
@@ -116,7 +116,7 @@ if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
   CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${CRW_VERSION} ]]; then 
-  echo "Error: must set either --cb crw-2.5-rhel-8 or --cv 2.5 to define the version of CRW Theia to build."
+  echo "Error: must set either --cb crw-2.y-rhel-8 or --cv 2.y to define the version of CRW Theia to build."
   usage
 fi
 
@@ -132,7 +132,7 @@ fi
 if [[ ! ${THEIA_COMMIT_SHA} ]]; then
   pushd /tmp >/dev/null || true
   curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/${CHE_THEIA_BRANCH}/build.include
-  export $(cat build.include | egrep "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+  export $(cat build.include | grep -E "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
   popd >/dev/null || true
 fi
 echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA}"
@@ -190,7 +190,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   if [[ ${SKIP_ASYNC_TESTS} -eq 1 ]]; then
     set +e
     set +x
-    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
+    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | grep -E test); do
       ASYNC_TESTS="$(cat $d | grep "test(" | grep "async () => {")"
       if [[ ${ASYNC_TESTS} ]]; then
         echo "[WARNING] Disable async tests in $d"
@@ -205,7 +205,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   if [[ ${SKIP_SYNC_TESTS} -eq 1 ]]; then
     set +e
     set +x
-    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | egrep test); do
+    for d in $(find ${CHE_THEIA_DIR} -type f -name "*.ts" | grep -E test); do
       SYNC_TESTS="$(cat $d | grep "test(" | grep -v "async" | grep "() => {")"
       if [[ ${SYNC_TESTS} ]]; then
         echo "[WARNING] Disable sync tests in $d"
@@ -462,7 +462,7 @@ handle_che_theia() {
   ${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
    2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
-  # NONZERO="$(egrep "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
+  # NONZERO="$(grep -E "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
   # if [[ $? -ne 0 ]] || [[ $NONZERO ]]; then 
   #  echo "[ERROR] Container build of ${CHE_THEIA_IMAGE_NAME} failed: "
   #  echo "${NONZERO}"
@@ -480,7 +480,7 @@ handle_che_theia() {
 
   # TODO: should we use some other Dockerfile?
   echo "-=-=-=- dockerfiles -=-=-=->"
-  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | egrep -v "alpine|e2e"
+  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | grep -E -v "alpine|e2e"
   echo "<-=-=-=- dockerfiles -=-=-=-"
 
   # list generated assets & tarballs
