@@ -11,41 +11,59 @@
 
 set -e
 set -u
-set -x
+
+# defaults
+nodeVersion="12.19.1" # version of node to use for theia containers (aligned to version in ubi base images)
+# see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
+# podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
+CRW_VERSION="" # must set this via cmdline with --cv, or use --cb to set MIDSTM_BRANCH
+MIDSTM_BRANCH="" # must set this via cmdline with --cb, or use --cv to set CRW_VERSION
+SOURCE_BRANCH="master"
+THEIA_BRANCH="master"
+THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
+THEIA_COMMIT_SHA=""
+
+# load defaults from file, if it exists
+if [[ -r ./BUILD_PARAMS ]]; then source ./BUILD_PARAMS; fi
 
 usage () {
-	echo "
-
-You must export a GITHUB_TOKEN to your shell before running this script, or you will be rate-limited by github.
-
+  set +u
+  if [[ -z $GITHUB_TOKEN ]]; then 
+    echo "
+You must export a GITHUB_TOKEN to your shell before running this script, or you will be rate-limited and the build will fail.
 See https://github.com/settings/tokens for more information.
-
-Usage:
+"
+  fi
+  set -u
+  echo "Usage:
   export GITHUB_TOKEN=*your token here*
   $0 --ctb CHE_THEIA_BRANCH [options]
 
 Examples:
-  $0 --ctb 7.yy.x --all --no-cache --no-tests --rmi:tmp --cb crw-2.y-rhel-8
-  $0 --ctb 7.yy.x --all --no-cache --no-tests --rmi:tmp --cv 2.y
+  $(if [[ -r ./BUILD_COMMAND ]]; then cat ./BUILD_COMMAND; fi)
 
-Options: 
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cb crw-2.y-rhel-8
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cv 2.y
+
+Options:
   $0 -d      | build theia-dev
-  $0 -t      | build (or rebuild) theia. Note: if theia-dev not already built, must add -d flag too
-  $0 -b      | build (or rebuild) theia-endpoint-runtime-binary. Note: if theia-dev not already built, must add -d flag too
-  $0 --all   | build 3 projects: theia-dev, theia, theia-endpoint-runtime-binary
+  $0 -t      | build (or rebuild) theia; depends on theia-dev (-d)
+  $0 -b      | build (or rebuild) theia-endpoint-runtime-binary; depends on dev and theia (-d -t)
+  $0 --all   | equivalent to -d -t -b
 
 Note that steps are run in the order specified, so always start with -d if needed.
 
 Additional flags:
-
-  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles
-  --cv       | rather than pull from CRW_BRANCH of redhat-developer/codeready-workspaces/dependencies/VERSION file, set a CRW_VERSION 
-  --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, 
-             | default: master; probably don't ever need to override this now that code checkout logic relies on master branch + a specific SHA
-  --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, 
-             | default: eclipse-theia/theia; optional: redhat-developer/eclipse-theia - so we can build from a tag instead of a SHA
-  --tcs      | container build arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources
-             | default: if not set, extract from https://raw.githubusercontent.com/eclipse/che-theia/CHE_THEIA_BRANCH/build.include
+  --ctb      | CHE_THEIA_BRANCH from which to sync into CRW; default: ${SOURCE_BRANCH}
+  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., crw-2.y-rhel-8 or ${MIDSTM_BRANCH}
+  --cv       | rather than pull from CRW_BRANCH version of redhat-developer/codeready-workspaces/dependencies/VERSION file, 
+             | just set CRW_VERSION; default: ${CRW_VERSION}
+  --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, default: ${THEIA_BRANCH} [never change this]
+  --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, default: ${THEIA_GITHUB_REPO}
+             | optional: redhat-developer/eclipse-theia - so we can build from a tag instead of a SHA
+  --tcs      | container build arg THEIA_COMMIT_SHA from which commit SHA to get Eclipse Theia sources; default: ${THEIA_COMMIT_SHA}
+             | if not set, extract from https://raw.githubusercontent.com/eclipse/che-theia/SOURCE_BRANCH/build.include
+  --nv       | node version to use; default: ${nodeVersion}
 
 Docker + Podman flags:
   --podman      | detect podman and use that instead of docker for building, running, tagging + deleting containers
@@ -59,11 +77,9 @@ Test control flags:
   --no-tests       | skip both sync and async tests in .ts test files
 
 Cleanup options:
-
   --rmi:all | delete all generated images when done
-  --rmi:tmp | delete only images with :tmp tag when done
-"
-	exit
+  --rmi:tmp | delete only images with :tmp tag when done"
+  exit
 }
 if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 
@@ -77,20 +93,10 @@ SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
 PODMAN="" # by default, use docker
 PODMANFLAGS="" # optional flags specific to podman build command 
-nodeVersion="12.19.1" # version of node to use for theia containers (aligned to version in ubi base images)
-# see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
-# podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
-
-CRW_VERSION="" # must set this via cmdline
-MIDSTM_BRANCH="" # must set this via cmdline
-CHE_THEIA_BRANCH="master"
-THEIA_BRANCH="master"
-THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
-THEIA_COMMIT_SHA=""
 for key in "$@"; do
   case $key in 
       '--nv') nodeVersion="$2"; shift 2;;
-      '--ctb') CHE_THEIA_BRANCH="$2"; shift 2;;
+      '--ctb') SOURCE_BRANCH="$2"; shift 2;;
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
       '--tcs') THEIA_COMMIT_SHA="$2"; shift 2;;
@@ -129,9 +135,11 @@ else
   DOCKERRUN="docker"
 fi
 
+set -x
+
 if [[ ! ${THEIA_COMMIT_SHA} ]]; then
   pushd /tmp >/dev/null || true
-  curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/${CHE_THEIA_BRANCH}/build.include
+  curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/${SOURCE_BRANCH}/build.include
   export $(cat build.include | grep -E "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
   popd >/dev/null || true
 fi
@@ -169,13 +177,13 @@ sed_in_place() {
 if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
-  if [[ ${CHE_THEIA_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
-    git clone -b "${CHE_THEIA_BRANCH%%@*}" --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH%%@*} !"; exit 1; fi 
+  if [[ ${SOURCE_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
+    git clone -b "${SOURCE_BRANCH%%@*}" --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${SOURCE_BRANCH%%@*} !"; exit 1; fi 
     pushd "${TMP_DIR}"/che-theia >/dev/null
-      git reset "${CHE_THEIA_BRANCH##*@}" --hard
-      if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${CHE_THEIA_BRANCH##*@}" ]]; then 
-        echo "[ERR""OR] could not find SHA ${CHE_THEIA_BRANCH##*@} in branch ${CHE_THEIA_BRANCH%%@*} !"; 
+      git reset "${SOURCE_BRANCH##*@}" --hard
+      if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${SOURCE_BRANCH##*@}" ]]; then 
+        echo "[ERR""OR] could not find SHA ${SOURCE_BRANCH##*@} in branch ${SOURCE_BRANCH%%@*} !"; 
         echo "Latest 10 commits:"
         git --no-pager log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %C(blue)%aE%Creset %Cgreen(%cr)%Creset' --abbrev-commit -10
         echo
@@ -183,8 +191,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       fi
     popd >/dev/null
   else # clone from tag/branch
-    git clone -b "${CHE_THEIA_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${CHE_THEIA_BRANCH} !"; exit 1; fi 
+    git clone -b "${SOURCE_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${SOURCE_BRANCH} !"; exit 1; fi 
   fi
 
   if [[ ${SKIP_ASYNC_TESTS} -eq 1 ]]; then
