@@ -1,1 +1,1 @@
-./build.sh --nv 12.19.1 --cv 2.8 --ctb master --tb master --tgr eclipse-theia/theia -d -t -b --no-cache --rmi:all --no-async-tests
+./build.sh --nv 12.19.1 --cv 2.9 --ctb master --tb master --tgr eclipse-theia/theia -d -t -b --no-cache --rmi:all --no-async-tests
