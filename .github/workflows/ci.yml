@@ -35,8 +35,6 @@ jobs:
         if [[ ${{ steps.extract_branch.outputs.branch }} != "crw-2"*"rhel8" ]]; then # pull request
           FLAGS="--pull-request"
         fi
-        # TODO when upstream theia and che-theia switch to main branch, update these branch names too
-        # NOTE: use the same version of node as https://quay.io/eclipse/che-custom-nodejs-deasync
         cat BUILD_PARAMS
         cat BUILD_COMMAND
         $(cat BUILD_COMMAND) ${FLAGS}
