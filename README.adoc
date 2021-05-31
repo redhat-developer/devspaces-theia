@@ -1,7 +1,14 @@
 Links marked with this icon :door: are _internal to Red Hat_. This includes Jenkins servers, job configs in gitlab, and container sources in dist-git. 
 
-# codeready-workspaces-theia
-CodeReady Workspaces build of Theia, based on eclipse/che-theia project
+## What's inside?
+
+NOTE: the so-called master branch is deprecated and is no longer kept up to date. Instead, the latest nightly sources are in **crw-2-rhel-8 branch**, synced to upstream projects' main (or master) branches.
+
+For the latest stable release, see the **crw-2.y-rhel-8** branch with the largest y value.
+
+---
+
+This repo contains the code for the CodeReady Workspaces build of Theia, based on the link:https://github.com/eclipse-che/che-theia[che-theia] project.
 
 ## Create dockerfiles for theia in brew
 
