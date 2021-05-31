@@ -13,13 +13,15 @@ This repo contains the code for the CodeReady Workspaces build of Theia, based o
 ## Create dockerfiles for theia in brew
 
 `./build.sh` will:
-- fetch che-theia
-- generate `:next` tmp images from ubi8 config to be used for grabing assets
-- generate into `dockerfiles` directory the assets / Dockerfile
+
+* fetch che-theia
+* generate `:next` tmp images from ubi8 config to be used for grabing assets
+* generate into `dockerfiles` directory the assets / Dockerfile
 
 Steps: 
-- `./build.sh`
-- check `dockerfiles` directory with ready-to-go Dockerfile with already included in folders
+
+* `./build.sh`
+* check `dockerfiles` directory with ready-to-go Dockerfile with already included in folders
 
 ### NOTE
 
