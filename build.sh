@@ -166,8 +166,8 @@ CHE_THEIA_DIR=${TMP_DIR}/che-theia
 TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 TMP_THEIA_RUNTIME_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
-TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="quay.io/crw/theia-endpoint:${CRW_VERSION}-${BUILD_TYPE}-custom-nodejs-deasync-${UNAME}"
+TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-custom-nodejs-deasync-${UNAME}"
 
 sed_in_place() {
     SHORT_UNAME=$(uname -s)
