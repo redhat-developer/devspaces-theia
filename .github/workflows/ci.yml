@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2020-21 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: CI (pushes and pull requests)
+on: [push, pull_request]
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: docker/login-action@v1
+      name: "quay.io login"
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+    - uses: actions/checkout@v2
+      name: Fetch CRW Theia source code
+    - uses: actions/setup-node@v1
+      name: Set nodejs version = 12.x
+      with:
+        node-version: '12.x'
+    - name: Extract branch name
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    - name: build
+      run: |
+        docker image prune -a -f
+        FLAGS=""
+        if [[ ${{ steps.extract_branch.outputs.branch }} != "crw-2"*"rhel8" ]]; then # pull request
+          FLAGS="--pull-request"
+        fi
+        # TODO when upstream theia and che-theia switch to main branch, update these branch names too
+        # NOTE: use the same version of node as https://quay.io/eclipse/che-custom-nodejs-deasync
+        cat BUILD_PARAMS
+        cat BUILD_COMMAND
+        $(cat BUILD_COMMAND) ${FLAGS}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
