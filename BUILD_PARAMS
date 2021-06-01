@@ -1,4 +1,4 @@
-nodeVersion=12.19.1
+nodeVersion=12.21.0
 CRW_VERSION=2.9
 SOURCE_BRANCH=7.30.x
 THEIA_BRANCH=master
