@@ -39,7 +39,7 @@ jobs:
           FLAGS="--pull-request"
         fi
         cat BUILD_PARAMS
-        cat BUILD_COMMAND
+        cat BUILD_COMMAND ${FLAGS}
         $(cat BUILD_COMMAND) ${FLAGS}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
