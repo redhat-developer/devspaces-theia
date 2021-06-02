@@ -142,6 +142,7 @@ collect_assets_crw_theia() {
   echo "Requested node version: v${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-headers.tar.gz
+  # OLD WAY: 
   # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
 
@@ -164,8 +165,9 @@ collect_assets_crw_theia() {
   # Save sshpass sources
   ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
 
+  # Copy branding files
+  cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
   # create asset-branding.tar.gz from branding folder contents
-  # TODO need to fetch sources for this ?
   tar -pcvzf asset-branding.tar.gz branding/*
 
   popd >/dev/null || exit 1
@@ -226,5 +228,8 @@ echo; echo "Asset tarballs generated. See the following folder(s) for content to
 for step in $STEPS; do
   output_dir=${step//_/-};output_dir=${output_dir/collect-assets-crw-/}
   echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}" >/dev/null || exit 1
+    find "${output_dir}" -type f -name "asset*" | tree --fromfile --noreport
+  popd >/dev/null || exit 1
 done
 echo
