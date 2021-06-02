@@ -16,12 +16,8 @@ nodeVersion="12.21.0" # version of node to use for theia containers (aligned to 
 
 BUILD_TYPE="tmp" # use "tmp" prefix for temporary build tags in Quay, but if we're building based on a PR, set "pr" prefix
 
-base_dir="$(pwd)"
-BREW_DOCKERFILE_ROOT_DIR=${base_dir}/"dockerfiles"
-
-STEPS=""
-DELETE_TMP_IMAGES=0
-CRW_VERSION=2.y
+# load defaults from file, if it exists
+if [[ -r ./BUILD_PARAMS ]]; then source ./BUILD_PARAMS; fi
 
 usage () {
   echo "Usage:
@@ -33,25 +29,38 @@ Examples:
 Options:
   $0 -d      | collect assets for theia-dev
   $0 -t      | collect assets for theia
-  $0 -b      | collect assets for theia-endpoint-runtime-binary
-  $0 --all   | equivalent to -d -t -b
+  $0 -e      | collect assets for theia-endpoint-runtime-binary
+  $0 --all   | equivalent to -d -t -e
+
+Additional flags:
+  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., crw-2.y-rhel-8 or ${MIDSTM_BRANCH}
+  --cv       | rather than pull from CRW_BRANCH version of redhat-developer/codeready-workspaces/dependencies/VERSION file, 
+             | just set CRW_VERSION; default: ${CRW_VERSION}
+  --nv       | node version to use; default: ${nodeVersion}
 
 Optional flags:
-  --nv           | node version to use; default: ${nodeVersion}
   --podman       | detect podman and use that instead of docker for building, running, tagging + deleting containers
+  --podmanflags  | additional flags for podman builds, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
   --pull-request | if building based on a pull request, use 'pr' in tag names instead of 'tmp'
   --rmi:tmp      | delete temp images when done"
   exit
 }
 if [[ $# -lt 1 ]]; then usage; fi
 
+base_dir="$(pwd)"
+BREW_DOCKERFILE_ROOT_DIR=${base_dir}/"dockerfiles"
+
+STEPS=""
+DELETE_TMP_IMAGES=0
+
 for key in "$@"; do
   case $key in 
       '--nv') nodeVersion="$2"; shift 2;;
+      '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
       '--cv')  CRW_VERSION="$2"; shift 2;;
       '-d') STEPS="${STEPS} collect_assets_crw_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} collect_assets_crw_theia"; shift 1;;
-      '-b') STEPS="${STEPS} collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
+      '-e'|'-b') STEPS="${STEPS} collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--all') STEPS="collect_assets_crw_theia_dev collect_assets_crw_theia collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
       '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 1;;
@@ -59,8 +68,14 @@ for key in "$@"; do
       '--pull-request')   BUILD_TYPE="pr"; shift 1;;
   esac
 done
-echo "CRW_VERSION = ${CRW_VERSION}"
-if [[ ${CRW_VERSION} == "2.y" ]]; then usage; fi
+
+if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
+  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
+fi
+if [[ ! ${CRW_VERSION} ]]; then 
+  echo "Error: must set either --cb crw-2.y-rhel-8 or --cv 2.y to define the version of CRW Theia for which to collect assets."
+  usage
+fi
 
 UNAME="$(uname -m)"
 TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
@@ -229,7 +244,7 @@ for step in $STEPS; do
   output_dir=${step//_/-};output_dir=${output_dir/collect-assets-crw-/}
   echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
   pushd "${BREW_DOCKERFILE_ROOT_DIR}" >/dev/null || exit 1
-    find "${output_dir}" -type f -name "asset*" | tree --fromfile --noreport
+    find "${output_dir}" -type f -name "asset*" | tree --fromfile --noreport -h
   popd >/dev/null || exit 1
 done
 echo

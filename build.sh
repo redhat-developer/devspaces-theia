@@ -48,8 +48,8 @@ Examples:
 Options:
   $0 -d      | build theia-dev
   $0 -t      | build (or rebuild) theia; depends on theia-dev (-d)
-  $0 -b      | build (or rebuild) theia-endpoint-runtime-binary; depends on dev and theia (-d -t)
-  $0 --all   | equivalent to -d -t -b
+  $0 -e      | build (or rebuild) theia-endpoint-runtime-binary; depends on dev and theia (-d -t)
+  $0 --all   | equivalent to -d -t -e
 
 Note that steps are run in the order specified, so always start with -d if needed.
 
@@ -107,7 +107,7 @@ for key in "$@"; do
       '--cv')  CRW_VERSION="$2"; shift 2;;
       '-d') STEPS="${STEPS} bootstrap_crw_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} bootstrap_crw_theia"; shift 1;;
-      '-b') STEPS="${STEPS} bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
+      '-e'|'-b') STEPS="${STEPS} bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--all') STEPS="bootstrap_crw_theia_dev bootstrap_crw_theia bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
