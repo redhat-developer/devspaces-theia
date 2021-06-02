@@ -31,14 +31,11 @@ jobs:
       name: Set nodejs version = 12.x
       with:
         node-version: '12.x'
-    - name: Extract branch name
-      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-      id: extract_branch
     - name: build
       run: |
         docker image prune -a -f
         FLAGS=""
-        if [[ ${{ steps.extract_branch.outputs.branch }} != "crw-2"*"rhel8" ]]; then # pull request
+        if [[ ${{ github.event_name }} == "pull_request" ]]; then # pull request
           FLAGS="--pull-request"
         fi
         cat BUILD_PARAMS
