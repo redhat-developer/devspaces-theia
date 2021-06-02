@@ -11,10 +11,10 @@ name: CI (pushes and pull requests)
 on:
   pull_request:
     branches-ignore:
-      - 'crw-2**rhel8'
+      - 'crw-2*rhel-8'
   push:
     branches:
-      - 'crw-2**rhel8'
+      - 'crw-2*rhel-8'
 jobs:
   docker-build:
     runs-on: ubuntu-latest
