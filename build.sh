@@ -70,6 +70,7 @@ Docker + Podman flags:
   --podmanflags | additional flags for podman builds, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
   --squash      | if running docker in experimental mode, squash images; may not work with podman
   --no-cache    | do not use docker/podman cache
+  --rm-cache    | before building anything, purge target images from local docker/podman cache
 
 Test control flags:
   --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
@@ -89,6 +90,7 @@ if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
 STEPS=""
 DELETE_TMP_IMAGES=0
 DELETE_ALL_IMAGES=0
+DELETE_CACHE_IMAGES=0
 SKIP_ASYNC_TESTS=0
 SKIP_SYNC_TESTS=0
 DOCKERFLAGS="" # eg., --no-cache --squash
@@ -111,6 +113,7 @@ for key in "$@"; do
       '--all') STEPS="bootstrap_crw_theia_dev bootstrap_crw_theia bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
+      '--rm-cache') DELETE_CACHE_IMAGES=1; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
       '--rmi:all') DELETE_ALL_IMAGES=1; shift 1;;
       '--no-async-tests') SKIP_ASYNC_TESTS=1; shift 1;;
@@ -119,6 +122,7 @@ for key in "$@"; do
       '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 1;;
       '--podmanflags')    PODMANFLAGS="$2"; shift 2;;
       '--pull-request')   BUILD_TYPE="pr"; shift 1;;
+      '-h') usage; shift 1;;
   esac
 done
 
@@ -168,6 +172,24 @@ TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-bu
 TMP_THEIA_RUNTIME_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-custom-nodejs-deasync-${UNAME}"
+
+rmi_images() {
+  set +x
+  DELETE_CACHE=$1
+  # optional cleanup of generated images
+  if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+    echo;echo "Delete temp images from container registry"
+    ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
+  fi
+  if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+    echo;echo "Delete che-theia images from container registry"
+    ${DOCKERRUN} rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
+  fi
+  set -x
+}
+
+# wipe local images from cache
+if [[ ${DELETE_CACHE_IMAGES} -eq 1 ]]; then rmi_images 1; fi
 
 sed_in_place() {
     SHORT_UNAME=$(uname -s)
@@ -526,20 +548,16 @@ for step in $STEPS; do
   $step
 done
 
-# optional cleanup of generated images
-if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
-  echo;echo "Delete temp images from container registry"
-  ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
-fi
-if [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
-  echo;echo "Delete che-theia images from container registry"
-  ${DOCKERRUN} rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
-fi
+rmi_images 0
 
 set +x
-echo; echo "Dockerfiles and resources generated - for tarballs, use collect-assets.sh script. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
-for step in $STEPS; do
-  output_dir=${step//_/-};output_dir=${output_dir/bootstrap-crw-/}
-  echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
-done
-echo
+if [[ $STEPS ]]; then 
+  echo; echo "Dockerfiles and resources generated - for tarballs, use collect-assets.sh script. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
+  for step in $STEPS; do
+    output_dir=${step//_/-};output_dir=${output_dir/bootstrap-crw-/}
+    echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
+  done
+  echo
+else
+  echo; echo "Nothing to do! No build flags provided (-d, -t, -e, or --all). Run this script with -h for help."
+fi
