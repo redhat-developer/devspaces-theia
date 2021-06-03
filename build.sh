@@ -22,6 +22,7 @@ SOURCE_BRANCH="master"
 THEIA_BRANCH="master"
 THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
 THEIA_COMMIT_SHA=""
+BUILD_TYPE="tmp" # use "tmp" prefix for temporary build tags via GH actions, but if we're building based on a PR, set "pr" prefix
 
 # load defaults from file, if it exists
 if [[ -r ./BUILD_PARAMS ]]; then source ./BUILD_PARAMS; fi
@@ -65,10 +66,11 @@ Additional flags:
              | if not set, extract from https://raw.githubusercontent.com/eclipse/che-theia/SOURCE_BRANCH/build.include
   --nv       | node version to use; default: ${nodeVersion}
 
+Source control flags:
+  --commit      | using GITHUB_TOKEN, commit updated content in dockerfiles/ folder
+
 Docker + Podman flags:
-  --podman      | detect podman and use that instead of docker for building, running, tagging + deleting containers
-  --podmanflags | additional flags for podman builds, eg., '--cgroup-manager=cgroupfs --runtime=/usr/bin/crun'
-  --squash      | if running docker in experimental mode, squash images; may not work with podman
+  --no-images   | don't build images; just generate Dockerfiles
   --no-cache    | do not use docker/podman cache
   --rm-cache    | before building anything, purge target images from local docker/podman cache
 
@@ -76,11 +78,14 @@ Test control flags:
   --no-async-tests | replace test(...async...) with test.skip(...async...) in .ts test files
   --no-sync-tests  | replace test(...)         with test.skip(...) in .ts test files
   --no-tests       | skip both sync and async tests in .ts test files
-  --pull-request   | if building based on a pull request, use 'pr' in tag names instead of 'tmp'
+  --pr             | if building based on a GH pull request, use 'pr' in tag names instead of 'tmp'
+  --gh             | if building in GH action, use 'gh' in tag names instead of 'tmp'
+  --ci             | if building in Jenkins, use 'ci' in tag names instead of 'tmp'
 
 Cleanup options:
   --rmi:all | delete all generated images when done
-  --rmi:tmp | delete temp images when done"
+  --rmi:tmp | delete temp images when done
+"
   exit
 }
 if [[ $# -lt 1 ]] || [[ -z $GITHUB_TOKEN ]]; then usage; fi
@@ -93,10 +98,9 @@ DELETE_ALL_IMAGES=0
 DELETE_CACHE_IMAGES=0
 SKIP_ASYNC_TESTS=0
 SKIP_SYNC_TESTS=0
-DOCKERFLAGS="" # eg., --no-cache --squash
-PODMAN="" # by default, use docker
-PODMANFLAGS="" # optional flags specific to podman build command
-BUILD_TYPE="tmp" # use "tmp" prefix for temporary build tags in Quay, but if we're building based on a PR, set "pr" prefix
+DOCKERFLAGS="" # eg., --no-cache
+DO_DOCKER_BUILDS=1 # by default generate dockerfiles and then build containers
+COMMIT_CHANGES=0 # by default, don't commit anything that changed; optionally, use GITHUB_TOKEN to push changes to the current branch
 
 for key in "$@"; do
   case $key in 
@@ -111,7 +115,7 @@ for key in "$@"; do
       '-t') STEPS="${STEPS} bootstrap_crw_theia"; shift 1;;
       '-e'|'-b') STEPS="${STEPS} bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--all') STEPS="bootstrap_crw_theia_dev bootstrap_crw_theia bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
-      '--squash') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
+      '--no-images') DO_DOCKER_BUILDS=0; shift 1;;
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--rm-cache') DELETE_CACHE_IMAGES=1; shift 1;;
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
@@ -119,10 +123,11 @@ for key in "$@"; do
       '--no-async-tests') SKIP_ASYNC_TESTS=1; shift 1;;
       '--no-sync-tests')  SKIP_SYNC_TESTS=1; shift 1;;
       '--no-tests')       SKIP_ASYNC_TESTS=1; SKIP_SYNC_TESTS=1; shift 1;;
-      '--podman')         PODMAN=$(which podman 2>/dev/null || true); shift 1;;
-      '--podmanflags')    PODMANFLAGS="$2"; shift 2;;
-      '--pull-request')   BUILD_TYPE="pr"; shift 1;;
-      '-h') usage; shift 1;;
+      '--commit')         COMMIT_CHANGES=1; shift 1;;
+      '--pr') BUILD_TYPE="pr"; shift 1;;
+      '--gh') BUILD_TYPE="gh"; shift 1;;
+      '--ci') BUILD_TYPE="ci"; shift 1;; # TODO support using latest image tag or sha here 
+      '-h'|'--help') usage; shift 1;;
   esac
 done
 
@@ -134,21 +139,24 @@ if [[ ! ${CRW_VERSION} ]]; then
   usage
 fi
 
-# to build with podman if present, use --podman flag, else use docker
-if [[ ${PODMAN} ]]; then
-  DOCKER="${PODMAN} ${PODMANFLAGS}"
-  DOCKERRUN="${PODMAN}"
-else
-  DOCKER="docker"
-  DOCKERRUN="docker"
+BUILDER=$(command -v podman || true)
+if [[ ! -x $BUILDER ]]; then
+  # echo "[WARNING] podman is not installed, trying with docker"
+  BUILDER=$(command -v docker || true)
+  if [[ ! -x $BUILDER ]]; then
+    echo "[ERROR] Neither podman nor docker is installed. Install it to continue."
+    exit 1
+  fi
 fi
+DOCKER="${BUILDER}"
+DOCKERRUN="${BUILDER} run"
 
 set -x
 
 if [[ ! ${THEIA_COMMIT_SHA} ]]; then
   pushd /tmp >/dev/null || true
   curl -sSLO https://raw.githubusercontent.com/eclipse/che-theia/${SOURCE_BRANCH}/build.include
-  export $(cat build.include | grep -E "^THEIA_COMMIT_SHA") && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
+  export "$(cat build.include | grep -E "^THEIA_COMMIT_SHA")" && THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA//\"/}
   popd >/dev/null || true
 fi
 echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SHA}"
@@ -204,8 +212,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
   if [[ ${SOURCE_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
-    git clone -b "${SOURCE_BRANCH%%@*}" --single-branch https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${SOURCE_BRANCH%%@*} !"; exit 1; fi 
+    git clone -b "${SOURCE_BRANCH%%@*}" --single-branch https://github.com/eclipse-che/che-theia "${TMP_DIR}"/che-theia
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH%%@*} !"; exit 1; fi 
     pushd "${TMP_DIR}"/che-theia >/dev/null
       git reset "${SOURCE_BRANCH##*@}" --hard
       if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${SOURCE_BRANCH##*@}" ]]; then 
@@ -217,8 +225,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       fi
     popd >/dev/null
   else # clone from tag/branch
-    git clone -b "${SOURCE_BRANCH}" --single-branch --depth 1 https://github.com/eclipse/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse/che-theia from ${SOURCE_BRANCH} !"; exit 1; fi 
+    git clone -b "${SOURCE_BRANCH}" --single-branch --depth 1 https://github.com/eclipse-che/che-theia "${TMP_DIR}"/che-theia
+    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH} !"; exit 1; fi 
   fi
 
   if [[ ${SKIP_ASYNC_TESTS} -eq 1 ]]; then
@@ -279,13 +287,17 @@ bootstrap_crw_theia_dev() {
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
-  ${DOCKER} build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
-  popd >/dev/null
+  cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/bootstrap.Dockerfile
 
-  # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-  ${DOCKERRUN} push "${TMP_THEIA_DEV_BUILDER_IMAGE}"
-  ${DOCKERRUN} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
+  if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
+    ${DOCKER} build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
+
+    # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
+    ${DOCKERRUN} push "${TMP_THEIA_DEV_BUILDER_IMAGE}"
+    ${DOCKERRUN} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
+  fi
+  popd >/dev/null
 
   # Create image theia-dev:ubi8-brew
   rm -rf "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8-brew
@@ -299,10 +311,10 @@ bootstrap_crw_theia_dev() {
   bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
   popd >/dev/null
+  cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/rhel.Dockerfile
 
   # Copy assets from ubi8 to local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-
   echo "Remove previous assets"
   rm -rf assets-*
   # copy assets
@@ -310,16 +322,18 @@ bootstrap_crw_theia_dev() {
   # Copy src
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
-
   popd >/dev/null
 
-  # Copy generated Dockerfile
-  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
-  cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  # echo "BEFORE SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  # cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  # echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
-  echo "BEFORE SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
-  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
-  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
+  # Copy generated Dockerfile, with Brew transformations
+  sed -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile \
+  `# cannot resolve RHCC from inside Brew so use no registry to resolve from Brew using same container name` \
+  -e "s#FROM registry.redhat.io/#FROM #g" \
+  -e "s#FROM registry.access.redhat.com/#FROM #g" \
+  > "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
 
   # fix Dockerfile to use tarball instead of folder
   # -COPY asset-unpacked-generator ${HOME}/eclipse-che-theia-generator
@@ -328,10 +342,10 @@ bootstrap_crw_theia_dev() {
   newline='
 '
   sed_in_place -e "s#COPY asset-unpacked-generator \${HOME}/eclipse-che-theia-generator#COPY asset-eclipse-che-theia-generator.tgz \${HOME}/eclipse-che-theia-generator.tgz\\${newline}RUN cd \${HOME} \&\& tar zxf eclipse-che-theia-generator.tgz \&\& mv package eclipse-che-theia-generator#" "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
- 
-  echo "AFTER SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
-  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
-  echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
+
+  # echo "AFTER SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
+  # cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/Dockerfile
+  # echo "<======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile ======="
 
   # TODO do we need to run this build ? isn't the above build good enough?
   # # build local
@@ -366,17 +380,25 @@ bootstrap_crw_theia() {
   # first generate the Dockerfile
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}  
+  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile
   cp .Dockerfile .ubi8-dockerfile
-  # Create one image for builder
-  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
-  # and create runtime image as well
-  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
-  popd >/dev/null
+  if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
+    # Create one image for builder
+    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
+    # and create runtime image as well
+    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
+      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
 
+    # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
+    ${DOCKERRUN} push "${TMP_THEIA_BUILDER_IMAGE}" 
+    ${DOCKERRUN} push "${TMP_THEIA_RUNTIME_IMAGE}" 
+    ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
+  fi
+  popd >/dev/null
+  
   # Create image theia-dev:ubi8-brew
   rm -rf "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8-brew
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8 "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8-brew
@@ -388,12 +410,8 @@ bootstrap_crw_theia() {
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/rhel.Dockerfile
   popd >/dev/null
-
-  # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-  ${DOCKERRUN} push "${TMP_THEIA_BUILDER_IMAGE}" 
-  ${DOCKERRUN} push "${TMP_THEIA_RUNTIME_IMAGE}" 
-  ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
 
   # Copy assets from ubi8 to local
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
@@ -404,16 +422,20 @@ bootstrap_crw_theia() {
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
 
-  # Copy generated Dockerfile
-  mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
-  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  # Copy generated Dockerfile, with Brew transformations
+  sed -r "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile \
+  `# cannot resolve RHCC from inside Brew so use no registry to resolve from Brew using same container name` \
+  -e "s#FROM registry.redhat.io/#FROM #g" \
+  -e "s#FROM registry.access.redhat.com/#FROM #g" \
+  `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
+  -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
+  `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
+  -e "s#(theia-.+):next#\1:${CRW_VERSION}#g" \
+  > "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
-  # Copy branding files
-  cp -r "${base_dir}"/conf/theia/branding "${BREW_DOCKERFILE_ROOT_DIR}"/theia
-
-  echo "========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile =========>"
-  cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
-  echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
+  # echo "========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile =========>"
+  # cat "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  # echo "<========= ${BREW_DOCKERFILE_ROOT_DIR}/theia/Dockerfile ========="
 
   popd >/dev/null
 
@@ -437,14 +459,26 @@ bootstrap_crw_theia() {
   sed_in_place -r -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
   sed_in_place -r -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
+  sed_in_place -r \
+  `# fix up theia loader patch inclusion (3 steps)` \
+  -e "s#ADD branding/loader/loader.patch .+#COPY asset-branding.tar.gz /tmp/asset-branding.tar.gz#g" \
+  -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN tar xvzf /tmp/asset-branding.tar.gz -C /tmp; cp /tmp/\\1#g" \
+  -e "s#(RUN cd .+/theia-source-code && git apply).+#\1 /tmp/branding/loader/loader.patch#g" \
+  `# don't create tarballs` \
+  -e "s#.+tar zcf.+##g" \
+  `# don't do node-gyp installs, etc.` \
+  -e "s#.+node-gyp.+##g" \
+  `# copy from builder` \
+  -e "s#^COPY branding #COPY --from=builder /tmp/branding #g" \
+  "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+
   # verify that CDN is enabled
   grep -E "https://static.developers.redhat.com/che/crw_theia_artifacts/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
   grep -E "https://cdn.jsdelivr.net/npm/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
 
-  # TODO: should we use some other Dockerfile?
-  echo "-=-=-=- dockerfiles -=-=-=->"
-  find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | grep -E -v "alpine|e2e"
-  echo "<-=-=-=- dockerfiles -=-=-=-"
+  # echo "-=-=-=- dockerfiles -=-=-=->"
+  # find "${DOCKERFILES_ROOT_DIR}"/ -name "*ockerfile*" | grep -E -v "alpine|e2e"
+  # echo "<-=-=-=- dockerfiles -=-=-=-"
 
   # # echo generated Dockerfiles
   # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
@@ -458,30 +492,39 @@ bootstrap_crw_theia() {
 
 # now do che-theia-endpoint-runtime-binary
 bootstrap_crw_theia_endpoint_runtime_binary() {
-  # pull the temp image from quay so we can use it in this build, but rename it because che-theia hardcodes image dependencies
+  # pull the temp image from quay so we can use it in this build, but rename it because che-theia endpoint hardcodes image dependencies
   ${DOCKERRUN} pull "${TMP_THEIA_RUNTIME_IMAGE}"
   ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
   # ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" "${CHE_THEIA_IMAGE_NAME}" || true # maybe not needed?
+
+  # revert any local changes to builder-from.dockerfile
+  pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8 >/dev/null || exit 1
+    git checkout builder-from.dockerfile >/dev/null || true
+  popd >/dev/null || exit 1
 
   # pull or build che-custom-nodejs-deasync, using definition in:
   # https://github.com/eclipse/che-theia/blob/master/dockerfiles/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile#L1
   nodeRepoWithTag=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2)
   { ${DOCKER} pull ${nodeRepoWithTag}; rc=$?; } || true
 
-  if [[ $rc -ne 0 ]] ; then # build if not available for current arch
-    # TODO update this to 12.21.0 to match what's in UBI 8.4?
-    cd "${TMP_DIR}"/che-custom-nodejs-deasync
-    nodeVersionDeAsync=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f2) # eg., 12.20.0
-    echo "$nodeVersionDeAsync" > VERSION
-    # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI or scratch based build, not alpine
-    # see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
-    ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
-      --build-arg NODE_VERSION=${nodeVersionDeAsync}
-  else # just retag the pulled image using the TMP image name
-    docker tag ${nodeRepoWithTag} ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
-    docker rmi ${nodeRepoWithTag}
+  if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
+    if [[ $rc -ne 0 ]] ; then # build if not available for current arch
+      # TODO update this to 12.21.0 to match what's in UBI 8.4?
+      cd "${TMP_DIR}"/che-custom-nodejs-deasync
+      nodeVersionDeAsync=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f2) # eg., 12.20.0
+      echo "$nodeVersionDeAsync" > VERSION
+      # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI or scratch based build, not alpine
+      # see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
+      ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
+        --build-arg NODE_VERSION=${nodeVersionDeAsync}
+    else # just retag the pulled image using the TMP image name
+      ${DOCKER} tag ${nodeRepoWithTag} ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
+      ${DOCKER} rmi ${nodeRepoWithTag}
+    fi
+    # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
+    ${DOCKERRUN} push "${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}" 
   fi
-  sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1 ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
+  sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
 
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
@@ -491,17 +534,18 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   # first generate the Dockerfile
   bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --target:builder \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false 
+  cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/bootstrap.Dockerfile
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
-  ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-    --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-  if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
+  if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
+    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
+    # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
+    ${DOCKERRUN} push "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 
+  fi
   popd >/dev/null
-
-  # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-  ${DOCKERRUN} push "${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}" 
-  ${DOCKERRUN} push "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 
 
   # Create image theia-endpoint-runtime-binary:ubi8-brew
   rm -rf "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8-brew
@@ -516,14 +560,21 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --target:builder \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false
   popd >/dev/null
+  cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/rhel.Dockerfile
 
-  # Copy assets from ubi8 to local
-  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
-
-  # Copy generated Dockerfile
-  cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
+  # Copy generated Dockerfile, with Brew transformations
+  sed -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile \
+  `# cannot resolve RHCC from inside Brew so use no registry to resolve from Brew using same container name` \
+  -e "s#FROM registry.redhat.io/#FROM #g" \
+  -e "s#FROM registry.access.redhat.com/#FROM #g" \
+  `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
+  -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
+  `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
+  -e "s#(theia-.+):next#\1:${CRW_VERSION}#g" \
+  > "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
 
   # TODO do we need to run this build ? isn't the above build good enough?
+  # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # # build local
   # ${DOCKER} build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
   #   --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
@@ -557,6 +608,20 @@ if [[ $STEPS ]]; then
     output_dir=${step//_/-};output_dir=${output_dir/bootstrap-crw-/}
     echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
   done
+
+  # commit changed files to this repo
+  if [[ ${COMMIT_CHANGES} -eq 1 ]]; then
+    pushd "${BREW_DOCKERFILE_ROOT_DIR}" >/dev/null
+    git update-index --refresh || true  # ignore timestamp updates
+    if [[ $(git diff-index HEAD --) ]]; then # file changed
+      git add .
+      echo "[INFO] Commit generated dockerfiles, lock files, and asset lists for these builds: ${STEPS//bootstrap_crw_/}"
+      git commit -s -m "chore: generated dockerfiles, lock files, and asset lists"
+      git pull || true
+      git push || true
+    fi
+    popd >/dev/null
+  fi
   echo
 else
   echo; echo "Nothing to do! No build flags provided (-d, -t, -e, or --all). Run this script with -h for help."
