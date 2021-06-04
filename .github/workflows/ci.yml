@@ -34,9 +34,9 @@ jobs:
     - name: build
       run: |
         docker image prune -a -f
-        FLAGS=""
+        FLAGS="--gh"
         if [[ ${{ github.event_name }} == "pull_request" ]]; then # pull request
-          FLAGS="--pull-request"
+          FLAGS="--pr"
         fi
         cat BUILD_PARAMS
         cat BUILD_COMMAND ${FLAGS}
