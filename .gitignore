@@ -1,2 +1,4 @@
 tmp
-dockerfiles
+dockerfiles/*/*gz
+dockerfiles/theia-dev/asset-unpacked-generator/
+dockerfiles/theia/branding/
