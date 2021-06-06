@@ -117,7 +117,6 @@ if [[ ! -x $BUILDER ]]; then
     exit 1
   fi
 fi
-DOCKERRUN="${BUILDER} run"
 
 listAssets() {
   find "$1/" -name "asset*" -type f -a -not -name "asset-list-${UNAME}.txt" | sort -u | sed -r -e "s#^$1/*##"
@@ -128,11 +127,11 @@ createYarnAsset() {
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /home/theia-dev/.yarn-global = yarn
   # /opt/app-root/src/.npm-global = yarn symlinks
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /home/theia-dev/.yarn-global \
   #   /opt/app-root/src/.npm-global'
-  ${DOCKERRUN} --rm --entrypoint sh "${1}" -c 'tar -pzcf - \
+  ${BUILDER} run --rm --entrypoint sh "${1}" -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
     /opt/app-root/src/.npm-global' > asset-yarn-"${UNAME}".tgz
@@ -155,13 +154,13 @@ collect_assets_crw_theia() {
   # /home/theia-dev/theia-source-code/plugins/ = VS Code extensions
   # /tmp/vscode-ripgrep-cache-1.2.4 /tmp/vscode-ripgrep-cache-1.5.7 = rigrep binaries
   # /home/theia-dev/.cache = include electron/node-gyp cache
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'ls -la \
   #   /home/theia-dev/theia-source-code/dev-packages \
   #   /home/theia-dev/theia-source-code/packages \
   #   /home/theia-dev/theia-source-code/plugins \
   #   /tmp/vscode-ripgrep-cache* \
   #   /home/theia-dev/.cache'
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
     /home/theia-dev/theia-source-code/dev-packages \
     /home/theia-dev/theia-source-code/packages \
     /home/theia-dev/theia-source-code/plugins \
@@ -175,27 +174,27 @@ collect_assets_crw_theia() {
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-headers.tar.gz
   # OLD WAY: 
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
 
   # Add yarn.lock after compilation
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn-"${UNAME}".lock
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn-"${UNAME}".lock
 
   # Theia source code
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
 
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /opt/app-root/src/.npm-global = npm global
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /opt/app-root/src/.npm-global'
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /opt/app-root/src/.npm-global' > asset-yarn-runtime-image-"${UNAME}".tar.gz
 
   # Save sshpass sources
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
 
   # TODO can we create this another way so we don't need a tarball? if so we won't need --source flag either!
   # create asset-branding.tar.gz from branding folder contents
@@ -213,16 +212,16 @@ collect_assets_crw_theia_endpoint_runtime_binary() {
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /usr/local/share/.config/yarn/global
   # /opt/app-root/src/.npm-global = yarn symlinks
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /usr/local/share/.config/yarn/global'
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz
 
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
     'cd /tmp && tar -pzcf - nexe-cache' > asset-theia-endpoint-runtime-pre-assembly-nexe-cache-"${UNAME}".tar.gz
-  ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
+  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
     'cd /tmp && tar -pzcf - nexe' > asset-theia-endpoint-runtime-pre-assembly-nexe-"${UNAME}".tar.gz
 
   # node-src
@@ -231,7 +230,7 @@ collect_assets_crw_theia_endpoint_runtime_binary() {
   echo "Requested node version: v${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-src.tar.gz
-  # ${DOCKERRUN} --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
+  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
 
   listAssets "${TARGETDIR}"
@@ -252,7 +251,7 @@ done
 # optional cleanup of generated images
 if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from container registry"
-  ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
+  ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
 fi
 
 echo; echo "Asset tarballs generated. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"

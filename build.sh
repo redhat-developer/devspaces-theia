@@ -148,8 +148,6 @@ if [[ ! -x $BUILDER ]]; then
     exit 1
   fi
 fi
-DOCKER="${BUILDER}"
-DOCKERRUN="${BUILDER} run"
 
 set -x
 
@@ -187,11 +185,11 @@ rmi_images() {
   # optional cleanup of generated images
   if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
     echo;echo "Delete temp images from container registry"
-    ${DOCKERRUN} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
+    ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
   fi
   if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
     echo;echo "Delete che-theia images from container registry"
-    ${DOCKERRUN} rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
+    ${BUILDER} rmi -f $CHE_THEIA_DEV_IMAGE_NAME $CHE_THEIA_IMAGE_NAME $CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME || true
   fi
   set -x
 }
@@ -290,12 +288,12 @@ bootstrap_crw_theia_dev() {
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/bootstrap.Dockerfile
 
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
-    ${DOCKER} build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+    ${BUILDER} build -f .Dockerfile -t "${TMP_THEIA_DEV_BUILDER_IMAGE}" . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
     if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_DEV_BUILDER_IMAGE} failed." exit 1; fi
 
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${DOCKERRUN} push "${TMP_THEIA_DEV_BUILDER_IMAGE}"
-    ${DOCKERRUN} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
+    ${BUILDER} push "${TMP_THEIA_DEV_BUILDER_IMAGE}"
+    ${BUILDER} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
   fi
   popd >/dev/null
 
@@ -350,11 +348,11 @@ bootstrap_crw_theia_dev() {
   # TODO do we need to run this build ? isn't the above build good enough?
   # # build local
   # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
-  # ${DOCKER} build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+  # ${BUILDER} build -t ${CHE_THEIA_DEV_IMAGE_NAME} . ${DOCKERFLAGS} --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
   # if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${CHE_THEIA_DEV_IMAGE_NAME} failed." exit 1; fi
   # popd >/dev/null
   # # publish image to quay
-  # ${DOCKERRUN} push "${CHE_THEIA_DEV_IMAGE_NAME}"
+  # ${BUILDER} push "${CHE_THEIA_DEV_IMAGE_NAME}"
 
   # # echo generated Dockerfiles
   # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev >/dev/null
@@ -369,8 +367,8 @@ bootstrap_crw_theia_dev() {
 # now do che-theia
 bootstrap_crw_theia() {
   # pull the temp image from quay so we can use it in this build, but rename it because che-theia hardcodes image dependencies
-  ${DOCKERRUN} pull "${TMP_THEIA_DEV_BUILDER_IMAGE}"
-  ${DOCKERRUN} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
+  ${BUILDER} pull "${TMP_THEIA_DEV_BUILDER_IMAGE}"
+  ${BUILDER} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
 
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
@@ -384,18 +382,18 @@ bootstrap_crw_theia() {
   cp .Dockerfile .ubi8-dockerfile
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
     # Create one image for builder
-    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+    ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
       --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
     if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
     # and create runtime image as well
-    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
+    ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
       --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
     if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
 
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${DOCKERRUN} push "${TMP_THEIA_BUILDER_IMAGE}" 
-    ${DOCKERRUN} push "${TMP_THEIA_RUNTIME_IMAGE}" 
-    ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
+    ${BUILDER} push "${TMP_THEIA_BUILDER_IMAGE}" 
+    ${BUILDER} push "${TMP_THEIA_RUNTIME_IMAGE}" 
+    ${BUILDER} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
   fi
   popd >/dev/null
   
@@ -443,7 +441,7 @@ bootstrap_crw_theia() {
   # # build local
   # # https://github.com/eclipse/che/issues/16844 -- fails in Jenkins and locally since 7.12 so comment out 
   # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia >/dev/null
-  # ${DOCKER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
+  # ${BUILDER} build -t ${CHE_THEIA_IMAGE_NAME} . ${DOCKERFLAGS} \
   #  --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
   #  2>&1 | tee /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt
   # # NONZERO="$(grep -E "a non-zero code:|Exit code: 1|Command failed"  /tmp/CHE_THEIA_IMAGE_NAME_buildlog.txt || true)"
@@ -453,7 +451,7 @@ bootstrap_crw_theia() {
   # #  exit 1
   # # fi
   # popd >/dev/null
-  # ${DOCKERRUN} push "${CHE_THEIA_IMAGE_NAME}"
+  # ${BUILDER} push "${CHE_THEIA_IMAGE_NAME}"
 
   # Set the CDN options inside the Dockerfile
   sed_in_place -r -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
@@ -493,9 +491,9 @@ bootstrap_crw_theia() {
 # now do che-theia-endpoint-runtime-binary
 bootstrap_crw_theia_endpoint_runtime_binary() {
   # pull the temp image from quay so we can use it in this build, but rename it because che-theia endpoint hardcodes image dependencies
-  ${DOCKERRUN} pull "${TMP_THEIA_RUNTIME_IMAGE}"
-  ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
-  # ${DOCKERRUN} tag "${TMP_THEIA_RUNTIME_IMAGE}" "${CHE_THEIA_IMAGE_NAME}" || true # maybe not needed?
+  ${BUILDER} pull "${TMP_THEIA_RUNTIME_IMAGE}"
+  ${BUILDER} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
+  # ${BUILDER} tag "${TMP_THEIA_RUNTIME_IMAGE}" "${CHE_THEIA_IMAGE_NAME}" || true # maybe not needed?
 
   # revert any local changes to builder-from.dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8 >/dev/null || exit 1
@@ -505,7 +503,7 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   # pull or build che-custom-nodejs-deasync, using definition in:
   # https://github.com/eclipse/che-theia/blob/master/dockerfiles/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile#L1
   nodeRepoWithTag=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2)
-  { ${DOCKER} pull ${nodeRepoWithTag}; rc=$?; } || true
+  { ${BUILDER} pull ${nodeRepoWithTag}; rc=$?; } || true
 
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
     if [[ $rc -ne 0 ]] ; then # build if not available for current arch
@@ -515,14 +513,14 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
       echo "$nodeVersionDeAsync" > VERSION
       # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI or scratch based build, not alpine
       # see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
-      ${DOCKER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
+      ${BUILDER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
         --build-arg NODE_VERSION=${nodeVersionDeAsync}
     else # just retag the pulled image using the TMP image name
-      ${DOCKER} tag ${nodeRepoWithTag} ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
-      ${DOCKER} rmi ${nodeRepoWithTag}
+      ${BUILDER} tag ${nodeRepoWithTag} ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
+      ${BUILDER} rmi ${nodeRepoWithTag}
     fi
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${DOCKERRUN} push "${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}" 
+    ${BUILDER} push "${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}" 
   fi
   sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
 
@@ -539,11 +537,11 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   cp .Dockerfile .ubi8-dockerfile
   # Create one image for builder target
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
-    ${DOCKER} build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+    ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
       --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
     if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} failed." exit 1; fi
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${DOCKERRUN} push "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 
+    ${BUILDER} push "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 
   fi
   popd >/dev/null
 
@@ -576,7 +574,7 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   # TODO do we need to run this build ? isn't the above build good enough?
   # pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # # build local
-  # ${DOCKER} build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
+  # ${BUILDER} build -t ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} . ${DOCKERFLAGS} \
   #   --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
   # if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME} failed." exit 1; fi
   # popd >/dev/null
