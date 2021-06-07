@@ -66,9 +66,9 @@ COMMIT_CHANGES=0
 
 for key in "$@"; do
   case $key in 
-      '-d') STEPS="${STEPS} collect_assets_crw_theia_dev"; shift 1;;
-      '-t') STEPS="${STEPS} collect_assets_crw_theia"; shift 1;;
-      '-e'|'-b') STEPS="${STEPS} collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
+      '-d') STEPS="collect_assets_crw_theia_dev"; shift 1;;
+      '-t') STEPS="collect_assets_crw_theia"; shift 1;;
+      '-e'|'-b') STEPS="collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
       '--source'|'-s') SOURCEDIR="$2"; shift 2;;
       '--target') TARGETDIR="$2"; shift 2;;
       '--platforms') PLATFORMS="$2"; shift 2;;
@@ -262,9 +262,9 @@ echo
 
 if [[ ${COMMIT_CHANGES} -eq 1 ]]; then
   pushd "${TARGETDIR}" >/dev/null || exit 1
-    echo "[INFO] Upload new sources:${outputFiles}"
+    echo "[INFO] Upload new sources: $(ls asset-*)"
     if [[ $(git remote -v | grep origin | grep pkgs.devel || true) ]]; then
-      rhpkg new-sources ${outputFiles}
+      rhpkg new-sources "$(ls asset-*)"
     fi
 
     maxfilesize=$(du -b asset-* | sed -r -e "s#\t.+##" | sort -Vr | head -1)
