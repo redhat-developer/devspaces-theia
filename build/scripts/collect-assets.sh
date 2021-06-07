@@ -24,12 +24,12 @@ usage () {
 pkgs.devel codeready-workspaces-theia-dev checked out. Repeat for theia and theia-endpoint pkgs.devel repos.
 
 Usage:
-  $0 --cv CRW_VERSION --target /path/to/pkgs.devel/crw-theia-dev/ [options]
+  $0 --cb MIDSTM_BRANCH --target /path/to/pkgs.devel/crw-theia-dev/ [options]
 
 Examples:
-  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia-dev/      -d --rmi:tmp --ci --commit
-  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia/          -t --rmi:tmp --ci --commit
-  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia-endpoint/ -e --rmi:tmp --ci --commit
+  $0 --cb crw-2-rhel-8 --target /path/to/pkgs.devel/crw-theia-dev/      -d --rmi:tmp --ci --commit
+  $0 --cb crw-2-rhel-8 --target /path/to/pkgs.devel/crw-theia/          -t --rmi:tmp --ci --commit
+  $0 --cb crw-2-rhel-8 --target /path/to/pkgs.devel/crw-theia-endpoint/ -e --rmi:tmp --ci --commit
 
 Options:
   -d           | collect assets for theia-dev
@@ -75,7 +75,7 @@ for key in "$@"; do
       '--nv') nodeVersion="$2"; shift 2;;
       '--pr') BUILD_TYPE="pr"; shift 1;;
       '--gh') BUILD_TYPE="gh"; shift 1;;
-      '--ci') BUILD_TYPE="ci"; shift 1;; # TODO support using latest image tag or sha here 
+      '--ci') BUILD_TYPE="ci"; shift 1;; # TODO support using latest image tag 2.9-zzz-ci- or 2.9-ci-sha256sum here (see also getLatestImage.sh excludes!)
       '--rmi:tmp') DELETE_TMP_IMAGES=1; shift 1;;
       '--commit') COMMIT_CHANGES=1; shift 1;;
       '-h'|'--help') usage; shift 1;;
@@ -93,6 +93,22 @@ if [[ ! $STEPS ]]; then
   echo "[ERROR] Nothing to do! set steps to perform with -d, -t-, -e flags."; echo
   usage
 fi
+
+getContainerExtract() {
+  pushd /tmp >/dev/null || exit
+  if [[ ${MIDSTM_BRANCH} ]]; then 
+    curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/product/containerExtract.sh
+  else
+    # try to get the CRW_VERSION of the script
+    if [[ ${CRW_VERSION} ]] && [[ $(curl -sSI https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-${CRW_VERSION}-rhel-8/product/containerExtract.sh | grep 404 || true) ]]; then
+      curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-2-rhel-8/product/containerExtract.sh
+    else
+      curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-${CRW_VERSION}-rhel-8/product/containerExtract.sh
+    fi
+  fi
+  chmod +x /tmp/containerExtract.sh
+  popd >/dev/null || exit
+}
 
 setImages() {
   if [[ ! $1 ]]; then UNAME="$(uname -m)"; else UNAME=$1; fi
@@ -116,34 +132,75 @@ listAssets() {
   find "$1/" -name "asset*" -type f -a -not -name "asset-list-${UNAME}.txt" | sort -u | sed -r -e "s#^$1/*##"
 }
 
-createYarnAsset() {
-  # Create asset with yarn cache, for a given container image
-  # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
-  # /home/theia-dev/.yarn-global = yarn
-  # /opt/app-root/src/.npm-global = yarn symlinks
-  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_DEV_BUILDER_IMAGE} -c 'ls -la \
-  #   /usr/local/share/.cache/yarn/v*/ \
-  #   /home/theia-dev/.yarn-global \
-  #   /opt/app-root/src/.npm-global'
+user=$(whoami)
+tmpdirs=""
+extractContainerTgz() {
+  container="$1"
+  filesToCollect="$2"
+  targetTarball="$3"
+  # TODO remove this and use tar extraction rules in dockerfile instead
+  subfolder="$4" # optionally, cd into a subfolder in the unpacked container before creating tarball
 
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh "${1}" -c 'tar -pzcf - \
-    /usr/local/share/.cache/yarn/v*/ \
-    /home/theia-dev/.yarn-global \
-    /opt/app-root/src/.npm-global' > asset-yarn-"${UNAME}".tgz
+  tmpcontainer="$(echo $container | tr "/:" "--")"
+  unpackdir="$(find /tmp -name "${tmpcontainer}-*" 2>/dev/null | sort -Vr | head -1 || true)"
+  if [[ ! ${unpackdir} ]]; then
+    # get container and unpack into a /tmp/ folder
+    time /tmp/containerExtract.sh "${1}"
+    unpackdir="$(find /tmp -name "${tmpcontainer}-*" 2>/dev/null | sort -Vr | head -1)"
+  fi
+  tmpdirs="${tmpdirs} ${unpackdir}"
+  echo "[INFO] Collect $filesToCollect from $unpackdir into ${TARGETDIR}/${targetTarball} ..."
+  pushd "${unpackdir}/${subfolder}" >/dev/null || exit 1
+    # shellcheck disable=SC2086
+    sudo tar -pzcf "${TARGETDIR}/${targetTarball}" ${filesToCollect} && \
+    sudo chown -R "${user}:${user}" "${TARGETDIR}/${targetTarball}"
+  popd >/dev/null || exit 1
+}
+
+extractContainerFile() {
+  container="$1"
+  fileToCollect="$2"
+  targetFile="$3"
+
+  tmpcontainer="$(echo $container | tr "/:" "--")"
+  unpackdir="$(find /tmp -name "${tmpcontainer}-*" 2>/dev/null | sort -Vr | head -1 || true)"
+  if [[ ! ${unpackdir} ]]; then
+    # get container and unpack into a /tmp/ folder
+    time /tmp/containerExtract.sh "${1}"
+    unpackdir="$(find /tmp -name "${tmpcontainer}-*" 2>/dev/null | sort -Vr | head -1)"
+  fi
+  tmpdirs="${tmpdirs} ${unpackdir}"
+  echo "[INFO] Collect $filesToCollect from $unpackdir into ${TARGETDIR}/${targetTarball} ..."
+  pushd "${unpackdir}" >/dev/null || exit 1
+    cp "${fileToCollect}" "${TARGETDIR}/${targetFile}" && \
+    sudo chown -R "${user}:${user}" "${TARGETDIR}/${targetTarball}"
+  popd >/dev/null || exit 1
 }
 
 ########################### theia-dev
 
 collect_assets_crw_theia_dev() {
-  createYarnAsset "${TMP_THEIA_DEV_BUILDER_IMAGE}"
+  tmpdirs=""
+  extractContainerTgz "${TMP_THEIA_DEV_BUILDER_IMAGE}" "\
+    usr/local/share/.cache/yarn/v*/ \
+    home/theia-dev/.yarn-global \
+    opt/app-root/src/.npm-global" asset-yarn-"${UNAME}".tgz
+
   listAssets "${TARGETDIR}"
+
+  # purge temporary container extraction folders
+  echo "sudo rm -fr $tmpdirs"
 }
 
 ########################### theia
 
 collect_assets_crw_theia() {
-  createYarnAsset "${TMP_THEIA_BUILDER_IMAGE}"
+  tmpdirs=""
+  # TODO why do we have a slightly different filename here than in theia-dev assets? 
+  extractContainerTgz "${TMP_THEIA_BUILDER_IMAGE}" "\
+    usr/local/share/.cache/yarn/v*/ \
+    home/theia-dev/.yarn-global \
+    opt/app-root/src/.npm-global" asset-yarn-"${UNAME}".tar.gz
 
   # post-install dependencies
   # /home/theia-dev/theia-source-code/packages/debug-nodejs/download = node debug vscode binary
@@ -156,13 +213,12 @@ collect_assets_crw_theia() {
   #   /home/theia-dev/theia-source-code/plugins \
   #   /tmp/vscode-ripgrep-cache* \
   #   /home/theia-dev/.cache'
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /home/theia-dev/theia-source-code/dev-packages \
-    /home/theia-dev/theia-source-code/packages \
-    /home/theia-dev/theia-source-code/plugins \
-    /tmp/vscode-ripgrep-cache-* \
-    /home/theia-dev/.cache' > asset-post-download-dependencies-"${UNAME}".tar.gz
+  extractContainerTgz "${TMP_THEIA_BUILDER_IMAGE}" "\
+    home/theia-dev/theia-source-code/dev-packages \
+    home/theia-dev/theia-source-code/packages \
+    home/theia-dev/theia-source-code/plugins \
+    tmp/vscode-ripgrep-cache-* \
+    home/theia-dev/.cache" asset-post-download-dependencies-"${UNAME}".tar.gz
 
   # node-headers
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-headers.tar.gz"
@@ -170,17 +226,12 @@ collect_assets_crw_theia() {
   echo "Requested node version: v${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-headers.tar.gz
-  # OLD WAY: 
-  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
-  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
 
   # Add yarn.lock after compilation
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn-"${UNAME}".lock
+  extractContainerFile "${TMP_THEIA_BUILDER_IMAGE}" "home/theia-dev/theia-source-code/yarn.lock" asset-yarn-"${UNAME}".lock
 
   # Theia source code
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
+  extractContainerFile ${TMP_THEIA_BUILDER_IMAGE} "home/theia-dev/theia-source-code.tgz" asset-theia-source-code.tar.gz
 
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
@@ -188,27 +239,28 @@ collect_assets_crw_theia() {
   # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /opt/app-root/src/.npm-global'
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
-    /usr/local/share/.cache/yarn/v*/ \
-    /opt/app-root/src/.npm-global' > asset-yarn-runtime-image-"${UNAME}".tar.gz
+  extractContainerTgz "${TMP_THEIA_RUNTIME_IMAGE}" "\
+    usr/local/share/.cache/yarn/v*/ \
+    opt/app-root/src/.npm-global" asset-yarn-runtime-image-"${UNAME}".tar.gz
 
   # Save sshpass sources
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
+  extractContainerFile "${TMP_THEIA_RUNTIME_IMAGE}" opt/app-root/src/sshpass.tar.gz asset-sshpass-sources.tar.gz
 
-  # TODO this should just be copied into the docker context instead of unpacked from a tarball but... for now
   # create asset-branding.tar.gz from branding folder contents
   if [[ -d branding ]]; then
     tar -pcvzf asset-branding.tar.gz branding/*
   fi
 
   listAssets "${TARGETDIR}"
+
+  # purge temporary container extraction folders
+  echo "sudo rm -fr $tmpdirs"
 }
 
 ########################### theia-endpoint
 
 collect_assets_crw_theia_endpoint_runtime_binary() {
+  tmpdirs=""
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /usr/local/share/.config/yarn/global
@@ -216,17 +268,12 @@ collect_assets_crw_theia_endpoint_runtime_binary() {
   # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /usr/local/share/.config/yarn/global'
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
-    /usr/local/share/.cache/yarn/v*/ \
-    /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz
+  extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" "
+    usr/local/share/.cache/yarn/v*/ \
+    usr/local/share/.config/yarn/global" asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz
 
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
-    'cd /tmp && tar -pzcf - nexe-cache' > asset-theia-endpoint-runtime-pre-assembly-nexe-cache-"${UNAME}".tar.gz
-  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
-  ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
-    'cd /tmp && tar -pzcf - nexe' > asset-theia-endpoint-runtime-pre-assembly-nexe-"${UNAME}".tar.gz
+  extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 'nexe-cache' asset-theia-endpoint-runtime-pre-assembly-nexe-cache-"${UNAME}".tar.gz "tmp/"
+  extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 'nexe' asset-theia-endpoint-runtime-pre-assembly-nexe-"${UNAME}".tar.gz "tmp/"
 
   # node-src
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}.tar.gz"
@@ -234,12 +281,14 @@ collect_assets_crw_theia_endpoint_runtime_binary() {
   echo "Requested node version: v${nodeVersion}"
   echo "URL to curl: ${download_url}"
   curl -sSL "${download_url}" -o asset-node-src.tar.gz
-  # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'nodeVersion=$(node --version); \
-  # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}.tar.gz" && curl ${download_url}' > asset-node-src.tar.gz
 
   listAssets "${TARGETDIR}"
+
+  # purge temporary container extraction folders
+  echo "sudo rm -fr $tmpdirs"
 }
 
+getContainerExtract
 for platform in $PLATFORMS; do
   platform=${platform//,/} # trim commas
   setImages $platform
@@ -257,6 +306,9 @@ if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from container registry"
   ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
 fi
+
+# TODO clean up tmp dirs
+echo "sudo rm -fr $tmpdirs"
 
 echo; echo "Asset tarballs generated. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
 for step in $STEPS; do
