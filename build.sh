@@ -613,8 +613,8 @@ if [[ $STEPS ]]; then
     git update-index --refresh || true  # ignore timestamp updates
     if [[ $(git diff-index HEAD --) ]]; then # file changed
       git add .
-      echo "[INFO] Commit generated dockerfiles, lock files, and asset lists for these builds: ${STEPS//bootstrap_crw_/}"
-      git commit -s -m "chore: generated dockerfiles, lock files, and asset lists"
+      echo "[INFO] Commit generated dockerfiles, lock files for these builds: ${STEPS//bootstrap_crw_/}"
+      git commit -s -m "chore: generated dockerfiles, lock files"
       git pull || true
       git push || true
     fi
