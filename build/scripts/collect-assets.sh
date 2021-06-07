@@ -24,12 +24,12 @@ usage () {
 pkgs.devel codeready-workspaces-theia-dev checked out. Repeat for theia and theia-endpoint pkgs.devel repos.
 
 Usage:
-  $0 --cv CRW_VERSION --source /path/to/gh/crw-theia/ --target /path/to/pkgs.devel/crw-theia-dev/ [options]
+  $0 --cv CRW_VERSION --target /path/to/pkgs.devel/crw-theia-dev/ [options]
 
 Examples:
-  $0 --cv 2.y --source /path/to/gh/crw-theia/ --target /path/to/pkgs.devel/crw-theia-dev/      -d --rmi:tmp --ci --commit
-  $0 --cv 2.y --source /path/to/gh/crw-theia/ --target /path/to/pkgs.devel/crw-theia/          -t --rmi:tmp --ci --commit
-  $0 --cv 2.y --source /path/to/gh/crw-theia/ --target /path/to/pkgs.devel/crw-theia-endpoint/ -e --rmi:tmp --ci --commit
+  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia-dev/      -d --rmi:tmp --ci --commit
+  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia/          -t --rmi:tmp --ci --commit
+  $0 --cv 2.y --target /path/to/pkgs.devel/crw-theia-endpoint/ -e --rmi:tmp --ci --commit
 
 Options:
   -d           | collect assets for theia-dev
@@ -58,7 +58,6 @@ Optional flags:
 }
 if [[ $# -lt 1 ]]; then usage; fi
 
-SOURCEDIR=""
 TARGETDIR="$(pwd)/"
 STEPS=""
 DELETE_TMP_IMAGES=0
@@ -69,7 +68,6 @@ for key in "$@"; do
       '-d') STEPS="collect_assets_crw_theia_dev"; shift 1;;
       '-t') STEPS="collect_assets_crw_theia"; shift 1;;
       '-e'|'-b') STEPS="collect_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
-      '--source'|'-s') SOURCEDIR="$2"; shift 2;;
       '--target') TARGETDIR="$2"; shift 2;;
       '--platforms') PLATFORMS="$2"; shift 2;;
       '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
@@ -89,10 +87,6 @@ if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
 fi
 if [[ ! ${CRW_VERSION} ]]; then 
   echo "[ERROR] Must set either --cb crw-2.y-rhel-8 or --cv 2.y to define the version of CRW Theia for which to collect assets."; echo
-  usage
-fi
-if [[ ! -d ${SOURCEDIR} ]]; then
-  echo "[ERROR] Must set path to crw-theia GH project folder (to collect branding files) with -s flag."; echo
   usage
 fi
 if [[ ! $STEPS ]]; then 
@@ -131,6 +125,8 @@ createYarnAsset() {
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /home/theia-dev/.yarn-global \
   #   /opt/app-root/src/.npm-global'
+
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh "${1}" -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /home/theia-dev/.yarn-global \
@@ -160,6 +156,7 @@ collect_assets_crw_theia() {
   #   /home/theia-dev/theia-source-code/plugins \
   #   /tmp/vscode-ripgrep-cache* \
   #   /home/theia-dev/.cache'
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'tar -pzcf - \
     /home/theia-dev/theia-source-code/dev-packages \
     /home/theia-dev/theia-source-code/packages \
@@ -178,9 +175,11 @@ collect_assets_crw_theia() {
   # download_url="https://nodejs.org/download/release/${nodeVersion}/node-${nodeVersion}-headers.tar.gz" && curl ${download_url}' > asset-node-headers.tar.gz
 
   # Add yarn.lock after compilation
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code/yarn.lock' > asset-yarn-"${UNAME}".lock
 
   # Theia source code
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_BUILDER_IMAGE} -c 'cat /home/theia-dev/theia-source-code.tgz' > asset-theia-source-code.tar.gz
 
   # npm/yarn cache
@@ -189,18 +188,20 @@ collect_assets_crw_theia() {
   # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /opt/app-root/src/.npm-global'
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /opt/app-root/src/.npm-global' > asset-yarn-runtime-image-"${UNAME}".tar.gz
 
   # Save sshpass sources
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_RUNTIME_IMAGE} -c 'cat /opt/app-root/src/sshpass.tar.gz' > asset-sshpass-sources.tar.gz
 
-  # TODO can we create this another way so we don't need a tarball? if so we won't need --source flag either!
+  # TODO this should just be copied into the docker context instead of unpacked from a tarball but... for now
   # create asset-branding.tar.gz from branding folder contents
-  pushd "${SOURCEDIR}"/conf/theia/ >/dev/null || exit 1
+  if [[ -d branding ]]; then
     tar -pcvzf asset-branding.tar.gz branding/*
-  popd >/dev/null || exit 1
+  fi
 
   listAssets "${TARGETDIR}"
 }
@@ -215,12 +216,15 @@ collect_assets_crw_theia_endpoint_runtime_binary() {
   # ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'ls -la \
   #   /usr/local/share/.cache/yarn/v*/ \
   #   /usr/local/share/.config/yarn/global'
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c 'tar -pzcf - \
     /usr/local/share/.cache/yarn/v*/ \
     /usr/local/share/.config/yarn/global' > asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz
 
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
     'cd /tmp && tar -pzcf - nexe-cache' > asset-theia-endpoint-runtime-pre-assembly-nexe-cache-"${UNAME}".tar.gz
+  #TODO switch to container extract method so we can get the appropriate container regardless of our local arch
   ${BUILDER} run --rm --entrypoint sh ${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE} -c \
     'cd /tmp && tar -pzcf - nexe' > asset-theia-endpoint-runtime-pre-assembly-nexe-"${UNAME}".tar.gz
 
