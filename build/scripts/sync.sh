@@ -45,7 +45,6 @@ if [[ "${CSV_VERSION}" == "2.y.0" ]]; then usage; fi
 echo ".github/
 .git/
 .gitattributes
-build/scripts/sync.sh
 /container.yaml
 /content_sets.*
 /cvp.yml
@@ -57,17 +56,29 @@ bootstrap.Dockerfile
 asset-unpacked-generator
 " > /tmp/rsync-excludes
 
-sync_crwtheia_to_crwimages() {
-  echo "Rsync ${1} to ${2}"
-  rsync -azrlt --checksum --exclude-from /tmp/rsync-excludes ${1}/ ${2}/ # --delete 
-  # ensure shell scripts are executable
-  find "${1}/" -name "*.sh" -exec chmod +x {} \;
+sync_build_scripts_to_crwimages() {
+  for targDir in theia-dev theia theia-endpoint; do
+    rsync -azrlt --checksum --delete --exclude-from /tmp/rsync-excludes "${SOURCEDIR}/build" "${SOURCEDIR}/BUILD_*" "${TARGETDIR}/codeready-workspaces-${targDir}"
+  done
 }
 
-sync_crwtheia_to_crwimages "${SOURCEDIR}/dockerfiles/theia-dev" "${TARGETDIR}/codeready-workspaces-theia-dev"
-sync_crwtheia_to_crwimages "${SOURCEDIR}/dockerfiles/theia" "${TARGETDIR}/codeready-workspaces-theia"
-sync_crwtheia_to_crwimages "${SOURCEDIR}/dockerfiles/theia-endpoint-runtime-binary" "${TARGETDIR}/codeready-workspaces-theia-endpoint"
+sync_crwtheia_to_crwimages() {
+  for targDir in theia-dev theia theia-endpoint; do
+    sourceDir=${targDir};
+    # TODO can we rename this in build.sh?
+    if [[ ${targDir} == "theia-endpoint" ]]; then sourceDir="theia-endpoint-runtime-binary"; fi
+    # TODO: should we use --delete?
+    echo "Rsync ${SOURCEDIR}/dockerfiles/${sourceDir} to ${TARGETDIR}/codeready-workspaces-${targDir}"
+    rsync -azrlt --checksum --exclude-from /tmp/rsync-excludes "${SOURCEDIR}/dockerfiles/${sourceDir}" "${TARGETDIR}/codeready-workspaces-${targDir}"
+  done
+}
 
+# sync build scripts, then dockerfiles/* folders
+sync_build_scripts_to_crwimages
+sync_crwtheia_to_crwimages
+
+# ensure shell scripts are executable
+find "${TARGETDIR}/" -name "*.sh" -exec chmod +x {} \;
 rm -f /tmp/rsync-excludes
 
 pushd "${TARGETDIR}" >/dev/null || exit 1
