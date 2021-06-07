@@ -8,7 +8,7 @@
 # Contributors:
 #   Red Hat, Inc. - initial API and implementation
 
-FROM quay.io/crw/theia-endpoint-rhel8:2.9-ci-custom-nodejs-deasync-ppc64le  as custom-nodejs
+FROM quay.io/crw/theia-endpoint-rhel8:2.9-ci-custom-nodejs-deasync-s390x  as custom-nodejs
 FROM eclipse/che-theia:next as builder
 ARG NEXE_SHA1=0f0869b292f1d7b68ba6e170d628de68a10c009f
 
