@@ -266,6 +266,13 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   # init yarn in che-theia
   pushd "${CHE_THEIA_DIR}" >/dev/null
   CHE_THEIA_SHA=$(git rev-parse --short=4 HEAD); echo "CHE_THEIA_SHA=${CHE_THEIA_SHA}"
+
+  # Patch theiaPlugins.json to add vscode-commons as a built-in
+  # See CRW-1894
+  VSCODE_COMMONS="https://github.com/redhat-developer/codeready-workspaces-vscode-extensions/releases/download/v608e3a2/redhat.vscode-commons-021b0165bb5ba05e107ee7e31d1e59a7a73f473c.vsix"
+  jq --arg location "$VSCODE_COMMONS" '. += {"vscode-commons": $location}' "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json" > "${TMP_DIR}/theiaPlugins.json"
+  mv "${TMP_DIR}/theiaPlugins.json" "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json"
+
   yarn --ignore-scripts
   popd >/dev/null
 
