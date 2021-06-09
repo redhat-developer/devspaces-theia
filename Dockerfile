@@ -49,7 +49,7 @@ gpgcheck=0\n\
 enabled=1\n\
 ' >> /etc/yum.repos.d/centos8.repo && cat /etc/yum.repos.d/centos8.repo && \
     # do we need java-1.8.0-openjdk?
-    yum install --nogpgcheck -y wget curl tar gzip bzip2 python36 podman buildah skopeo containers-common
+    yum install --nogpgcheck -y jq wget curl tar gzip bzip2 python36 podman buildah skopeo containers-common
 RUN pushd /usr/bin; rm -f python; ln -s ./python36 python; popd && whereis python && echo "PATH = $PATH" && \
     /usr/bin/python3 --version && \
     ln -s /usr/bin/podman /usr/bin/docker && \
