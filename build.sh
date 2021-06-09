@@ -177,7 +177,6 @@ TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_
 TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 TMP_THEIA_RUNTIME_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
 TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-custom-nodejs-deasync-${UNAME}"
 
 rmi_images() {
   set +x
@@ -185,7 +184,7 @@ rmi_images() {
   # optional cleanup of generated images
   if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
     echo;echo "Delete temp images from container registry"
-    ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE $TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE || true
+    ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
   fi
   if [[ ${DELETE_CACHE} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
     echo;echo "Delete che-theia images from container registry"
@@ -268,10 +267,6 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   CHE_THEIA_SHA=$(git rev-parse --short=4 HEAD); echo "CHE_THEIA_SHA=${CHE_THEIA_SHA}"
   yarn --ignore-scripts
   popd >/dev/null
-
-  # clone che-custom-nodejs-deasync
-  git clone -b "master" --single-branch https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git "${TMP_DIR}"/che-custom-nodejs-deasync
-  if [[ ! -d "${TMP_DIR}"/che-custom-nodejs-deasync ]]; then echo "[ERR""OR] could not clone https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git !"; exit 1; fi
 fi
 
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
@@ -500,29 +495,26 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
     git checkout builder-from.dockerfile >/dev/null || true
   popd >/dev/null || exit 1
 
+  # TODO update this to 12.21.0 to match what's in UBI 8.4?
   # pull or build che-custom-nodejs-deasync, using definition in:
   # https://github.com/eclipse/che-theia/blob/master/dockerfiles/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile#L1
-  nodeRepoWithTag=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2)
-  { ${BUILDER} pull ${nodeRepoWithTag}; rc=$?; } || true
-
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
+    nodeRepoWithTag=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2)
+    { ${BUILDER} pull ${nodeRepoWithTag}; rc=$?; } || true
     if [[ $rc -ne 0 ]] ; then # build if not available for current arch
-      # TODO update this to 12.21.0 to match what's in UBI 8.4?
+      # clone che-custom-nodejs-deasync only if we need to build it
+      git clone -b "master" --single-branch https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git "${TMP_DIR}"/che-custom-nodejs-deasync
+      if [[ ! -d "${TMP_DIR}"/che-custom-nodejs-deasync ]]; then echo "[ERR""OR] could not clone https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git !"; exit 1; fi
+
       cd "${TMP_DIR}"/che-custom-nodejs-deasync
       nodeVersionDeAsync=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f2) # eg., 12.20.0
       echo "$nodeVersionDeAsync" > VERSION
       # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI or scratch based build, not alpine
       # see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
-      ${BUILDER} build -f Dockerfile -t ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} . ${DOCKERFLAGS} \
+      ${BUILDER} build -f Dockerfile -t ${nodeRepoWithTag} . ${DOCKERFLAGS} \
         --build-arg NODE_VERSION=${nodeVersionDeAsync}
-    else # just retag the pulled image using the TMP image name
-      ${BUILDER} tag ${nodeRepoWithTag} ${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}
-      ${BUILDER} rmi ${nodeRepoWithTag}
     fi
-    # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${BUILDER} push "${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE}" 
   fi
-  sed -E -e "s|(FROM ).*che-custom-nodejs-deasync[^ ]*(.*)|\1${TMP_CHE_CUSTOM_NODEJS_DEASYNC_IMAGE} \2|g" -i "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile
 
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
