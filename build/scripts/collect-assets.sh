@@ -305,7 +305,8 @@ if [[ ${COMMIT_CHANGES} -eq 1 ]]; then
   pushd "${TARGETDIR}" >/dev/null || exit 1
     echo "[INFO] Upload new sources: $(ls asset-*)"
     if [[ $(git remote -v | grep origin | grep pkgs.devel || true) ]]; then
-      rhpkg new-sources "$(ls asset-*)"
+    # shellcheck disable=SC2046
+      rhpkg new-sources $(ls asset-*)
     fi
 
     maxfilesize=$(du -b asset-* | sed -r -e "s#\t.+##" | sort -Vr | head -1)
