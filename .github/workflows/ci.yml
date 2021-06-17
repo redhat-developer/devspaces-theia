@@ -38,6 +38,8 @@ jobs:
         if [[ ${{ github.event_name }} == "pull_request" ]]; then # pull request
           FLAGS="--pr"
         fi
+        git config --global user.name "Red Hat CodeReady Release Bot"
+        git config --global user.email "nickboldt+devstudio-release@gmail.com"
         cat BUILD_PARAMS
         echo "$(cat BUILD_COMMAND) ${FLAGS}"
         $(cat BUILD_COMMAND) ${FLAGS}
