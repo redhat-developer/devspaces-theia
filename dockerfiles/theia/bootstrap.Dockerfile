@@ -35,7 +35,6 @@ ENV SKIP_LINT=true SKIP_FORMAT=true SKIP_TEST=true
 # Clone theia and keep source code in home
 RUN git clone --branch master --single-branch https://github.com/${THEIA_GITHUB_REPO} ${HOME}/theia-source-code && \
     cd ${HOME}/theia-source-code && git checkout ${THEIA_COMMIT_SHA}
-RUN cd ${HOME} && tar zcf ${HOME}/theia-source-code.tgz theia-source-code
 # patch electron module by removing native keymap module (no need to have some X11 libraries)
 RUN line_to_delete=$(grep -n native-keymap ${HOME}/theia-source-code/dev-packages/electron/package.json | cut -d ":" -f 1) && \
     if [[ ${line_to_delete} ]]; then \
@@ -176,7 +175,8 @@ ARG SSHPASS_VERSION="1.06"
 # Install ssh for cloning ssh-repositories
 # Install less for handling git diff properly
 # Install sshpass for handling passwords for SSH keys
-RUN yum install -y sudo git bzip2 which bash curl openssh less && \
+# Install libsecret as Theia requires it
+RUN yum install -y sudo git bzip2 which bash curl openssh less libsecret && \
     curl -ssl https://netcologne.dl.sourceforge.net/project/sshpass/sshpass/"${SSHPASS_VERSION}"/sshpass-"${SSHPASS_VERSION}".tar.gz -o sshpass.tar.gz && \
     tar -xvf sshpass.tar.gz && cd sshpass-"${SSHPASS_VERSION}" && ./configure && make install && cd .. && rm -rf sshpass-"${SSHPASS_VERSION}" && \
     yum -y clean all && rm -rf /var/cache/yum
