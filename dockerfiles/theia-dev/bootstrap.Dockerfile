@@ -16,7 +16,7 @@ FROM registry.access.redhat.com/ubi8/nodejs-12:1-87
 
 # Install packages
 USER root
-RUN yum install -y curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less bash tar gzip rsync patch \
+RUN yum install -y curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less bash tar gzip rsync patch libsecret \
     && yum -y clean all && rm -rf /var/cache/yum
 
 # setup yarn (if missing)
