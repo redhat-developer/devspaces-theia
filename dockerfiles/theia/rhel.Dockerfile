@@ -114,7 +114,7 @@ RUN che-theia cdn --theia="${CDN_PREFIX}" --monaco="${MONACO_CDN_PREFIX}"
 RUN echo ${HOME} && cd ${HOME} && tar zxf eclipse-che-theia-generator.tgz && mv package eclipse-che-theia-generator && \
     ls -la /home/theia-dev/*
 
-RUN yum install -y libsecret-devel make cmake gcc gcc-c++
+RUN yum install -y libsecret libsecret-devel make cmake gcc gcc-c++
 RUN yarn global add node-gyp 
 RUN node-gyp install
 RUN sed -i ${HOME}/theia-source-code/package.json -e 's@node-gyp install@echo skip node-gyp install@'
