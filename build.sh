@@ -283,6 +283,8 @@ bootstrap_crw_theia_dev() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
 
+  # apply overrides from crw-theia
+  cp conf/theia-dev/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8/
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
   CMD="./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
@@ -377,6 +379,8 @@ bootstrap_crw_theia() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
+  # apply overrides from crw-theia
+  cp conf/theia/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8/
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   # first generate the Dockerfile
@@ -530,6 +534,8 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
 
+  # apply overrides from crw-theia
+  cp conf/theia-endpoint-runtime-binary/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # first generate the Dockerfile
