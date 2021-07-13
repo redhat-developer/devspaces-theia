@@ -285,8 +285,9 @@ bootstrap_crw_theia_dev() {
 
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}"
+  echo $CMD; $CMD
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/bootstrap.Dockerfile
 
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
@@ -308,8 +309,9 @@ bootstrap_crw_theia_dev() {
 
   # dry-run for theia-dev:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN}"
+  echo $CMD; $CMD
   popd >/dev/null
   cp "${DOCKERFILES_ROOT_DIR}"/theia-dev/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev/rhel.Dockerfile
 
@@ -378,8 +380,9 @@ bootstrap_crw_theia() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}  
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}"
+  echo $CMD; $CMD
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile
   cp .Dockerfile .ubi8-dockerfile
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
@@ -408,8 +411,9 @@ bootstrap_crw_theia() {
 
   # dry-run for theia:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}"
+  echo $CMD; $CMD
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/rhel.Dockerfile
   popd >/dev/null
 
@@ -529,8 +533,9 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # first generate the Dockerfile
-  bash ./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false 
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --target:builder \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false"
+  echo $CMD; $CMD
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/bootstrap.Dockerfile
   # keep a copy of the file
   cp .Dockerfile .ubi8-dockerfile
@@ -554,8 +559,9 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
 
   # dry-run for theia-endpoint-runtime:ubi8-brew to only generate Dockerfile
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
-  bash ./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --target:builder \
-    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false
+  CMD="./build.sh --dockerfile:Dockerfile.ubi8-brew --skip-tests --dry-run --tag:next --target:builder \
+    --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false"
+  echo $CMD; $CMD
   popd >/dev/null
   cp "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/rhel.Dockerfile
 
