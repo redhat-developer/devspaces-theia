@@ -1,4 +1,5 @@
 USER root
+# Install libsecret as Theia requires it
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN yum install -y curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less bash tar gzip rsync patch \
     && { [ $(uname -m) == "s390x" ] && yum install -y \
