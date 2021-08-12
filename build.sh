@@ -170,8 +170,8 @@ base_dir=$(cd "$(dirname "$0")"; pwd)
 
 # variables
 TMP_DIR=${base_dir}/tmp
-BREW_DOCKERFILE_ROOT_DIR=${base_dir}/"dockerfiles"
-CHE_THEIA_DIR=${TMP_DIR}/che-theia
+BREW_DOCKERFILE_ROOT_DIR="${base_dir}/dockerfiles"
+CHE_THEIA_DIR="${TMP_DIR}/che-theia"
 
 TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
@@ -209,9 +209,9 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   rm -rf "${TMP_DIR}"
   mkdir -p "${TMP_DIR}"
   if [[ ${SOURCE_BRANCH} == *"@"* ]]; then # if the branch includes an @SHA suffix, use that SHA from the branch
-    git clone -b "${SOURCE_BRANCH%%@*}" --single-branch https://github.com/eclipse-che/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH%%@*} !"; exit 1; fi 
-    pushd "${TMP_DIR}"/che-theia >/dev/null
+    git clone -b "${SOURCE_BRANCH%%@*}" --single-branch https://github.com/eclipse-che/che-theia "${CHE_THEIA_DIR}"
+    if [[ ! -d "${CHE_THEIA_DIR}" ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH%%@*} !"; exit 1; fi 
+    pushd "${CHE_THEIA_DIR}" >/dev/null
       git reset "${SOURCE_BRANCH##*@}" --hard
       if [[ "$(git --no-pager log --pretty=format:'%Cred%h%Creset' --abbrev-commit -1)" != "${SOURCE_BRANCH##*@}" ]]; then 
         echo "[ERR""OR] could not find SHA ${SOURCE_BRANCH##*@} in branch ${SOURCE_BRANCH%%@*} !"; 
@@ -222,8 +222,8 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       fi
     popd >/dev/null
   else # clone from tag/branch
-    git clone -b "${SOURCE_BRANCH}" --single-branch --depth 1 https://github.com/eclipse-che/che-theia "${TMP_DIR}"/che-theia
-    if [[ ! -d "${TMP_DIR}"/che-theia ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH} !"; exit 1; fi 
+    git clone -b "${SOURCE_BRANCH}" --single-branch --depth 1 https://github.com/eclipse-che/che-theia "${CHE_THEIA_DIR}"
+    if [[ ! -d "${CHE_THEIA_DIR}" ]]; then echo "[ERR""OR] could not clone https://github.com/eclipse-che/che-theia from ${SOURCE_BRANCH} !"; exit 1; fi 
   fi
 
   if [[ ${SKIP_ASYNC_TESTS} -eq 1 ]]; then
@@ -277,7 +277,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
 fi
 
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
-DOCKERFILES_ROOT_DIR=${TMP_DIR}/che-theia/dockerfiles
+DOCKERFILES_ROOT_DIR="${CHE_THEIA_DIR}/dockerfiles"
 
 bootstrap_crw_theia_dev() {
   cd "${base_dir}"
