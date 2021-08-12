@@ -260,6 +260,10 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   # apply patches against che-theia sources
   pushd "${CHE_THEIA_DIR}" >/dev/null
     # TODO add some patches into ./patches/ and apply them here
+
+    # @since 2.11 - CRW-2156 - use keytar 7.6
+    sed_in_place dockerfiles/theia/Dockerfile -r -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "\^7.6.0"|g'
+    grep keytar  dockerfiles/theia/Dockerfile 
   popd >/dev/null
 
   # init yarn in che-theia
