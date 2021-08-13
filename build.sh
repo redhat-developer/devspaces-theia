@@ -262,8 +262,13 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     # TODO add some patches into ./patches/ and apply them here
 
     # @since 2.11 - CRW-2156 - use keytar 7.6
-    sed_in_place dockerfiles/theia/Dockerfile -r -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "\^7.6.0"|g'
-    grep keytar  dockerfiles/theia/Dockerfile 
+    sed_in_place dockerfiles/theia/Dockerfile -r -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "\^7.6.0"|g'; # grep keytar  dockerfiles/theia/Dockerfile 
+    sed_in_place package.json                 -r -e '/ +"jest": .+/a \ \ \ \ "keytar": "7.6.0",'
+    sed_in_place yarn.lock -r -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
+      -e 's|keytar-7.7.0.tgz#3002b106c01631aa79b1aa9ee0493b94179bbbd2|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100|' \
+      -e 's|sha512-YEY9HWqThQc5q5xbXbRwsZTh2PJ36OSYRjSv3NN2xf5s5dpLTjEZnC2YikR29OaVybf9nQ0dJ/80i40RS97t/A==|sha512-H3cvrTzWb11+iv0NOAnoNAPgEapVZnYLVHZQyxmh7jdmVfR/c0jNNFEZ6AI38W/4DeTGTaY66ZX4Z1SbfKPvCQ==|' \
+      -e 's|node-addon-api "\^3.0.0"|node-addon-api "3.1.0"|g'
+
   popd >/dev/null
 
   # init yarn in che-theia
