@@ -262,13 +262,25 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     # TODO add some patches into ./patches/ and apply them here
 
     # @since 2.11 - CRW-2156 - use keytar 7.6
-    sed_in_place dockerfiles/theia/Dockerfile -r -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "\^7.6.0"|g'; # grep keytar  dockerfiles/theia/Dockerfile 
-    sed_in_place package.json                 -r -e '/ +"jest": .+/a \ \ \ \ "keytar": "7.6.0",'
-    sed_in_place yarn.lock -r -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
+    sed_in_place dockerfiles/theia/Dockerfile -r \
+      -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "7.6.0", \\n    "\*\*/node-addon-api": "3.1.0"|g'
+    grep -E "keytar|node-addon-api"  dockerfiles/theia/Dockerfile
+    sed_in_place package.json -r \
+      -e '/ +"jest": .+/a \ \ \ \ "keytar": "7.6.0",' \
+      -e '/ +"lerna": .+/a \ \ \ \ "node-addon-api": "3.1.0",'
+    grep -E "keytar|node-addon-api"  package.json
+    sed_in_place yarn.lock -r \
+      -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
       -e 's|keytar-7.7.0.tgz#3002b106c01631aa79b1aa9ee0493b94179bbbd2|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100|' \
       -e 's|sha512-YEY9HWqThQc5q5xbXbRwsZTh2PJ36OSYRjSv3NN2xf5s5dpLTjEZnC2YikR29OaVybf9nQ0dJ/80i40RS97t/A==|sha512-H3cvrTzWb11+iv0NOAnoNAPgEapVZnYLVHZQyxmh7jdmVfR/c0jNNFEZ6AI38W/4DeTGTaY66ZX4Z1SbfKPvCQ==|' \
-      -e 's|node-addon-api "\^3.0.0"|node-addon-api "3.1.0"|g'
-
+      -e 's|node-addon-api "\^3.0.0"|node-addon-api "3.1.0"|g' \
+      -e '/node-addon-api@\^3.0.0/{n;d}';
+    sed_in_place yarn.lock -r \
+      -e '/node-addon-api@\^3.0.0/a \ \ version "3.1.0"' \
+      -e 's|node-addon-api@\^3.0.0|node-addon-api@3.1.0|g' \
+      -e 's|node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161|node-addon-api-3.1.0.tgz#98b21931557466c6729e51cb77cd39c965f42239|g' \
+      -e 's|sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz\+dKTO7eftLg4d0A==|sha512-flmrDNB06LIl5lywUz7YlNGZH/5p0M7W28k8hzd9Lshtdh1wshD2Y+U4h9LD6KObOy1f+fEVdgprPrEymjM5uw==|g'
+    grep -E "keytar|node-addon-api" yarn.lock
   popd >/dev/null
 
   # init yarn in che-theia
