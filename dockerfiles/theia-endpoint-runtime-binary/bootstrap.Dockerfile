@@ -42,6 +42,10 @@ RUN /tmp/nexe/index.js -v && \
 FROM registry.access.redhat.com/ubi8-minimal:8.4-208 as runtime
 
 
+# Setup extra stuff
+# curl already installed in ubi8
+
 COPY --from=builder /home/theia/plugin-remote-endpoint /plugin-remote-endpoint
 
-ENTRYPOINT cp -rf /plugin-remote-endpoint /remote-endpoint/plugin-remote-endpoint
+COPY src/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
