@@ -346,8 +346,8 @@ bootstrap_crw_theia_dev() {
   cp -r "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* . && ls -la asset-*
 
   # copy DOCKERFILES_ROOT_DIR/theia-dev/src folder into BREW_DOCKERFILE_ROOT_DIR/theia-dev
-  rm -rf src
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
+  rm -fr theia-dev/src
+  rsync -azrlt --checksum --delete "${DOCKERFILES_ROOT_DIR}"/theia-dev/src/* src/
   popd >/dev/null
 
   # echo "BEFORE SED ======= ${BREW_DOCKERFILE_ROOT_DIR}/theia-dev/Dockerfile =======>"
@@ -450,8 +450,8 @@ bootstrap_crw_theia() {
   cp "${CHE_THEIA_DIR}"/dockerfiles/theia/asset-* .
 
   # copy DOCKERFILES_ROOT_DIR/theia/src folder into BREW_DOCKERFILE_ROOT_DIR/theia
-  rm -rf src
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
+  rm -fr theia/src
+  rsync -azrlt --checksum --delete "${DOCKERFILES_ROOT_DIR}"/theia/src/* src/
 
   # Copy generated Dockerfile, with Brew transformations
   sed -r "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile \
@@ -560,8 +560,8 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   # @since 2.12 CRW-1731
   pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
   # copy DOCKERFILES_ROOT_DIR/theia-endpoint-runtime-binary/src folder into BREW_DOCKERFILE_ROOT_DIR/theia-endpoint-runtime-binary
-  rm -rf src
-  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/src .
+  rm -fr theia-endpoint-runtime-binary/src
+  rsync -azrlt --checksum --delete "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/src/* src/
   popd >/dev/null
 
   # apply overrides from crw-theia
