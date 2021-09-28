@@ -344,7 +344,8 @@ bootstrap_crw_theia_dev() {
   rm -rf assets-*
   # copy assets
   cp -r "${CHE_THEIA_DIR}"/dockerfiles/theia-dev/asset-* . && ls -la asset-*
-  # Copy src
+
+  # copy DOCKERFILES_ROOT_DIR/theia-dev/src folder into BREW_DOCKERFILE_ROOT_DIR/theia-dev
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia-dev/src .
   popd >/dev/null
@@ -448,6 +449,7 @@ bootstrap_crw_theia() {
   # copy assets
   cp "${CHE_THEIA_DIR}"/dockerfiles/theia/asset-* .
 
+  # copy DOCKERFILES_ROOT_DIR/theia/src folder into BREW_DOCKERFILE_ROOT_DIR/theia
   rm -rf src
   cp -r "${DOCKERFILES_ROOT_DIR}"/theia/src .
 
@@ -554,6 +556,13 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
 
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary
+
+  # @since 2.12 CRW-1731
+  pushd "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
+  # copy DOCKERFILES_ROOT_DIR/theia-endpoint-runtime-binary/src folder into BREW_DOCKERFILE_ROOT_DIR/theia-endpoint-runtime-binary
+  rm -rf src
+  cp -r "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/src .
+  popd >/dev/null
 
   # apply overrides from crw-theia
   if [[ -d conf/theia-endpoint-runtime-binary/ubi8/ ]]; then cp conf/theia-endpoint-runtime-binary/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/; fi
