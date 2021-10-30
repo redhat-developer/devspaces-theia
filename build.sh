@@ -196,6 +196,17 @@ rmi_images() {
 # wipe local images from cache
 if [[ ${DELETE_CACHE_IMAGES} -eq 1 ]]; then rmi_images 1; fi
 
+# method to look for failures in build logs; over time we can add more strings to grep
+findErrors() {
+  # found a matching string
+  findErrors_Out="$(grep "error building at STEP" $1 || true)"
+  if [[ $findErrors_Out ]]; then
+    return 1
+  else 
+    return 0
+  fi
+}
+
 sed_in_place() {
     SHORT_UNAME=$(uname -s)
   if [ "$(uname)" == "Darwin" ]; then
@@ -414,12 +425,29 @@ bootstrap_crw_theia() {
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
     # Create one image for builder
     ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
-      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
-    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed." exit 1; fi
+      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} \
+      --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
+      | tee /tmp/TMP_THEIA_BUILDER_IMAGE.log.txt; findErrors /tmp/TMP_THEIA_BUILDER_IMAGE.log.txt
+    if [[ $? -ne 0 ]]; then 
+      echo "============================================================="
+      echo "[ERROR] Container build of ${TMP_THEIA_BUILDER_IMAGE} failed."
+      echo $findErrors_Out
+      echo "============================================================="
+      exit 1
+    fi
+
     # and create runtime image as well
     ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
-      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
-    if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
+      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} \
+      --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
+      | tee /tmp/TMP_THEIA_RUNTIME_IMAGE.log.txt; findErrors /tmp/TMP_THEIA_RUNTIME_IMAGE.log.txt
+    if [[ $? -ne 0 ]]; then 
+      echo "============================================================="
+      echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." 
+      echo $findErrors_Out
+      echo "============================================================="
+      exit 1 
+    fi
 
     echo "Build of ${TMP_THEIA_BUILDER_IMAGE} and ${TMP_THEIA_RUNTIME_IMAGE} complete on $(uname -m). Begin pushing containers to quay..."
 
