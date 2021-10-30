@@ -421,6 +421,8 @@ bootstrap_crw_theia() {
       --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}
     if [[ $? -ne 0 ]]; then echo "[ERROR] Container build of ${TMP_THEIA_RUNTIME_IMAGE} failed." exit 1; fi
 
+    echo "Build of ${TMP_THEIA_BUILDER_IMAGE} and ${TMP_THEIA_RUNTIME_IMAGE} complete on $(uname -m). Begin pushing containers to quay..."
+
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
     ${BUILDER} push "${TMP_THEIA_BUILDER_IMAGE}" 
     ${BUILDER} push "${TMP_THEIA_RUNTIME_IMAGE}" 
