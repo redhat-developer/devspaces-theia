@@ -45,7 +45,7 @@ RUN /tmp/nexe/index.js -v && \
 
 # Light image without node. We include remote binary to this image.
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.4-210 as runtime
+FROM registry.access.redhat.com/ubi8-minimal:8.4-212 as runtime
 USER 0
 RUN microdnf -y install yum && \
     yum -y -q update --nobest && \
@@ -63,7 +63,7 @@ LABEL summary="$SUMMARY" \
       io.openshift.tags="$PRODNAME,$COMPNAME" \
       com.redhat.component="$PRODNAME-$COMPNAME-container" \
       name="$PRODNAME/$COMPNAME" \
-      version="2.13" \
+      version="2.14" \
       license="EPLv2" \
       maintainer="Nick Boldt <nboldt@redhat.com>" \
       io.openshift.expose-services="" \

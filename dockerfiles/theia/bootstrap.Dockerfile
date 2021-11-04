@@ -33,7 +33,7 @@ ENV SKIP_LINT=true SKIP_FORMAT=true SKIP_TEST=true
 
 # Clone theia
 # Clone theia and keep source code in home
-RUN git clone --branch crw-2.13.0 --single-branch https://github.com/${THEIA_GITHUB_REPO} ${HOME}/theia-source-code && \
+RUN git clone --branch master --single-branch https://github.com/${THEIA_GITHUB_REPO} ${HOME}/theia-source-code && \
     cd ${HOME}/theia-source-code && git checkout ${THEIA_COMMIT_SHA}
 RUN cd ${HOME} && tar zcf ${HOME}/theia-source-code.tgz theia-source-code
 # patch electron module by removing native keymap module (no need to have some X11 libraries)
@@ -170,6 +170,7 @@ ARG SSHPASS_VERSION="1.08"
 
 # Install sudo
 # Install git
+# Install git-lfs for Large File Storage
 # Install bzip2 to unpack files
 # Install which tool in order to search git
 # Install curl and bash
@@ -178,12 +179,17 @@ ARG SSHPASS_VERSION="1.08"
 # Install sshpass for handling passwords for SSH keys
 # Install libsecret as Theia requires it
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
-RUN yum install -y sudo git bzip2 which bash curl openssh less \
-    && { [ $(uname -m) == "s390x" ] && yum install -y \
-          https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
-          https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm || true; } \
-    && { [ $(uname -m) == "ppc64le" ] && yum install -y libsecret https://rpmfind.net/linux/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm || true; } \
-    && { [ $(uname -m) == "x86_64" ] && yum install -y libsecret || true; } \
+RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
+      https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
+      https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm"; \
+    elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
+      libsecret \
+      https://rpmfind.net/linux/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm"; \
+    elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="libsecret"; \
+    else \
+      LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
+    fi; } \
+    && yum install -y $LIBSECRET sudo git git-lfs bzip2 which bash curl openssh less \
     && curl -sSLo sshpass.tar.gz https://downloads.sourceforge.net/project/sshpass/sshpass/"${SSHPASS_VERSION}"/sshpass-"${SSHPASS_VERSION}".tar.gz \
     && tar -xvf sshpass.tar.gz && cd sshpass-"${SSHPASS_VERSION}" && ./configure && make install && cd .. && rm -rf sshpass-"${SSHPASS_VERSION}" \
     && yum -y clean all && rm -rf /var/cache/yum
@@ -208,6 +214,8 @@ RUN npm install -g yarn@1.21.1
     # Add yeoman, theia plugin & VS Code generator and typescript (to have tsc/typescript working)
     && yarn global add ${YARN_FLAGS} yo @theia/generator-plugin@0.0.1-1622834185 generator-code typescript@3.5.3 \
     && mkdir -p ${HOME}/.config/insight-nodejs/ \
+    # Copy the global git configuration to user config as global config is overwritten by a mounted file at runtime
+    && cp /etc/gitconfig ${HOME}/.gitconfig \
     && chmod -R 777 ${HOME}/.config/ \
     # Disable the statistics for yeoman
     && echo '{"optOut": true}' > $HOME/.config/insight-nodejs/insight-yo.json \
