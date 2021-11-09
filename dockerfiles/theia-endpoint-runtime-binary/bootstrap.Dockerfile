@@ -39,11 +39,12 @@ RUN /tmp/nexe/index.js -v && \
 
 # Light image without node. We include remote binary to this image.
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.4-210 as runtime
+FROM registry.access.redhat.com/ubi8-minimal:8.4-212 as runtime
 
 
 # Setup extra stuff
 # curl already installed in ubi8
+RUN microdnf install -y python38 jq && pip3 install yq
 
 COPY --from=builder /home/theia/plugin-remote-endpoint /plugin-remote-endpoint
 

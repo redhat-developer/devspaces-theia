@@ -12,7 +12,7 @@
 # Theia dev Image
 #
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-12
-FROM registry.access.redhat.com/ubi8/nodejs-12:1-98.1634036321
+FROM registry.access.redhat.com/ubi8/nodejs-12:1-101
 
 # Install packages
 USER root
@@ -61,7 +61,8 @@ RUN npm config set prefix "${HOME}/.npm-global" && \
     echo "--global-folder \"${HOME}/.yarn-global\"" > ${HOME}/.yarnrc && \
     yarn config set network-timeout 600000 -g && \
     # add eclipse che-theia generator
-    yarn ${YARN_FLAGS} global add yo generator-code vsce @theia/generator-plugin@0.0.1-1622834185 file:${HOME}/eclipse-che-theia-generator && \
+    # use v1 of vsce as v2 requires nodejs 14
+    yarn ${YARN_FLAGS} global add yo generator-code vsce@^1 @theia/generator-plugin@0.0.1-1622834185 file:${HOME}/eclipse-che-theia-generator && \
     rm -rf ${HOME}/eclipse-che-theia-generator && \
     # Generate .passwd.template \
     cat /etc/passwd | \
