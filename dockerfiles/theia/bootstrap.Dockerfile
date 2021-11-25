@@ -33,7 +33,7 @@ ENV SKIP_LINT=true SKIP_FORMAT=true SKIP_TEST=true
 
 # Clone theia
 # Clone theia and keep source code in home
-RUN git clone --branch master --single-branch https://github.com/${THEIA_GITHUB_REPO} ${HOME}/theia-source-code && \
+RUN git clone --branch crw-2.14.0 --single-branch https://github.com/${THEIA_GITHUB_REPO} ${HOME}/theia-source-code && \
     cd ${HOME}/theia-source-code && git checkout ${THEIA_COMMIT_SHA}
 RUN cd ${HOME} && tar zcf ${HOME}/theia-source-code.tgz theia-source-code
 # patch electron module by removing native keymap module (no need to have some X11 libraries)
