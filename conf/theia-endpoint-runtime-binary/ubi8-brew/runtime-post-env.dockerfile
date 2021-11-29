@@ -1,3 +1,6 @@
+# copy previously cached yq dependency wheels for offline install
+COPY *.whl /tmp
+
 ENV SUMMARY="Red Hat CodeReady Workspaces - theia-endpoint container" \
     DESCRIPTION="Red Hat CodeReady Workspaces - theia-endpoint container" \
     PRODNAME="codeready-workspaces" \
@@ -15,3 +18,4 @@ LABEL summary="$SUMMARY" \
       maintainer="Nick Boldt <nboldt@redhat.com>" \
       io.openshift.expose-services="" \
       usage=""
+
