@@ -40,11 +40,17 @@ RUN /tmp/nexe/index.js -v && \
 # Light image without node. We include remote binary to this image.
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM registry.access.redhat.com/ubi8-minimal:8.5-204 as runtime
-
+USER 0
+RUN microdnf -y install yum python38 python38-pyyaml jq && python3 --version && \
+    yum -y -q update && \
+    yum -y -q clean all && rm -rf /var/cache/yum && \
+    echo "Installed Packages" && rpm -qa | sort -V && echo "End Of Installed Packages"
+# collect yq dependency wheels for offline install
+RUN python3 -m pip download yq -d /tmp
 
 # Setup extra stuff
-# curl already installed in ubi8
-RUN microdnf install -y python38 jq && pip3 install yq
+# install yq from local wheels we fetched earlier 
+RUN pip3 --version && pip3 install /tmp/*.whl && yq --version && rm -fr /tmp/*.whl 
 
 COPY --from=builder /home/theia/plugin-remote-endpoint /plugin-remote-endpoint
 
