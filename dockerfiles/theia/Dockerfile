@@ -10,7 +10,7 @@
 ###
 # Builder Image
 #
-FROM registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-theia-dev-rhel8:2.15 as builder
+FROM registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-theia-dev-rhel8:2.14 as builder
 
 WORKDIR ${HOME}
 
@@ -190,7 +190,7 @@ RUN find /che-theia-build -exec sh -c "chgrp 0 {}; chmod g+rwX {}" \; 2>log.txt 
 
 # Use node image
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-12
-FROM ubi8/nodejs-12:1-102 as runtime
+FROM ubi8/nodejs-12:1-102.1638363923 as runtime
 USER 0
 RUN yum -y -q update && \
     yum -y -q clean all && rm -rf /var/cache/yum && \
@@ -226,7 +226,7 @@ LABEL summary="$SUMMARY" \
       io.openshift.tags="$PRODNAME,$COMPNAME" \
       com.redhat.component="$PRODNAME-$COMPNAME-container" \
       name="$PRODNAME/$COMPNAME" \
-      version="2.15" \
+      version="2.14" \
       license="EPLv2" \
       maintainer="Nick Boldt <nboldt@redhat.com>" \
       io.openshift.expose-services="" \
