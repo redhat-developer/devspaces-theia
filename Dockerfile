@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Red Hat, Inc.
+# Copyright (c) 2020-2022 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -28,13 +28,13 @@ RUN if [[ ${GITHUB_TOKEN} == "YOUR_TOKEN_HERE" ]]; then \
 fi
 
 # see latest params in generated BUILD_PARAMS file
-ARG nodeVersion=12.21.0
-ARG yarnVersion=1.21.1
-ARG CRW_VERSION=2.10
-ARG SOURCE_BRANCH=7.32.x
+ARG nodeVersion=12.22.5
+ARG yarnVersion=1.22.17
+ARG CRW_VERSION=2.15
+ARG SOURCE_BRANCH=main
 ARG THEIA_BRANCH=master
 ARG THEIA_GITHUB_REPO=eclipse-theia/theia
-ARG THEIA_COMMIT_SHA=d734315e505ad4a7691a3f6f4a07d2209af0d9cf
+ARG THEIA_COMMIT_SHA=
 
 ENV NODEJS_VERSION=12 \
     PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:/usr/bin:$PATH
@@ -74,4 +74,4 @@ COPY build.sh conf ./
 RUN sed -i /etc/containers/storage.conf -re 's|driver = .+|driver = "vfs"|'
 
 # see latest params to pass here in generated BUILD_COMMAND
-RUN ./build.sh --nv ${nodeVersion} --cv 2.10 --ctb ${SOURCE_BRANCH} --tb ${THEIA_BRANCH} --tgr eclipse-theia/theia --no-cache --rm-cache --rmi:all --no-async-tests --ci --commit -d -t -e
+RUN ./build.sh --nv ${nodeVersion} --cv 2.15 --ctb ${SOURCE_BRANCH} --tb ${THEIA_BRANCH} --tgr eclipse-theia/theia --no-cache --rm-cache --rmi:all --no-async-tests --ci --commit -d -t -e
