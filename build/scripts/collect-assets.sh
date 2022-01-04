@@ -200,18 +200,19 @@ extractContainerTgz() {
   unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     echo "[ERROR] Problem extracting ${container} to /tmp !"; debugData; exit 1
+  else
+    echo "[INFO] Collect $filesToCollect from $unpackdir into ${targetTarball} ..."
+    pushd "${unpackdir}/${subfolder}" >/dev/null || exit 1
+      # shellcheck disable=SC2086
+      sudo tar -pzcf "${targetTarball}" ${filesToCollect#${subfolder}} --no-ignore-command-error
+      if [[ $? -ne 0 ]]; then 
+        echo "[ERROR] Problem packing ${targetTarball} with ${filesToCollect#${subfolder}} !"; debugData; exit 1
+      fi
+      sudo chown -R "${user}:${user}" "${targetTarball}"
+    popd >/dev/null || exit 1
+    sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true)
+    echo -e "[DEBUG] Disk space in / and /tmp after $container extraction:\n$(df -h / /tmp)"
   fi
-  echo "[INFO] Collect $filesToCollect from $unpackdir into ${targetTarball} ..."
-  pushd "${unpackdir}/${subfolder}" >/dev/null || exit 1
-    # shellcheck disable=SC2086
-    sudo tar -pzcf "${targetTarball}" ${filesToCollect#${subfolder}} --no-ignore-command-error
-    if [[ $? -ne 0 ]]; then 
-      echo "[ERROR] Problem packing ${targetTarball} with ${filesToCollect#${subfolder}} !"; debugData; exit 1
-    fi
-    sudo chown -R "${user}:${user}" "${targetTarball}"
-  popd >/dev/null || exit 1
-  sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true)
-  echo -e "[DEBUG] Disk space in / and /tmp after $container extraction:\n$(df -h / /tmp)"
 }
 
 extractContainerFile() {
