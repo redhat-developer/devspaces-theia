@@ -415,7 +415,7 @@ if [[ $(listAssets "${TARGETDIR}") ]]; then
   du -sch "${TARGETDIR}"/asset-*
   echo
 fi
-if [[ $(listWheels "${TARGETDIR}") ]]; then
+if [[ NOARCHSTEPS == *"collect_noarch_assets_crw_theia_endpoint_runtime_binary"* ]] && [[ $(listWheels "${TARGETDIR}") ]]; then
   echo; echo "Python wheels collected. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
   du -sch "${TARGETDIR}"/*.whl
   echo
