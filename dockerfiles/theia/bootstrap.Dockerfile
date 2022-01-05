@@ -181,7 +181,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 
 # setup yarn (if missing)
 # install yarn dependency
-RUN npm install -g yarn@1.21.1
+RUN npm install -g yarn@1.22.17
 
  RUN \
     adduser -r -u 1002 -G root -d ${HOME} -m -s /bin/sh theia \
