@@ -280,6 +280,11 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       -e '/ +"jest": .+/a \ \ \ \ "keytar": "7.6.0",' \
       -e '/ +"lerna": .+/a \ \ \ \ "node-addon-api": "3.1.0",'
     grep -E "keytar|node-addon-api"  package.json
+
+    # @since 2.15 CRW-2600 add lerna 4 (unpin ^2.2) https://github.com/eclipse-che/che-theia/commit/86effe8bbe572dcd076641d65fdc91f748c668bd
+    sed_in_place package.json -r \
+      -e 's/( +"lerna": )(".+")/\1 ">=2.11.0 || >=4.0.0"/'
+
     sed_in_place yarn.lock -r \
       -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
       -e 's|keytar-7.7.0.tgz#3002b106c01631aa79b1aa9ee0493b94179bbbd2|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100|' \
