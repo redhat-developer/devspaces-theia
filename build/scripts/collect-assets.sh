@@ -191,7 +191,10 @@ extractContainerTgz() {
 
   echo "[DEBUG] Before $container extraction:"; debugData
   tmpcontainer="$(echo "$container" | tr "/:" "--")"
-  if [[ $doclean == "clean" ]]; then sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true); fi
+  if [[ $doclean == "clean" ]]; then 
+    sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true); 
+    ${BUILDER} rmi -f $container || true
+  fi
   unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     # get container and unpack into a /tmp/ folder
@@ -404,7 +407,7 @@ for step in $NOARCHSTEPS; do
 done
 
 # optional cleanup of generated images
-if [[ ${DELETE_TMP_IMAGES} -eq 1 ]] || [[ ${DELETE_ALL_IMAGES} -eq 1 ]]; then
+if [[ ${DELETE_TMP_IMAGES} -eq 1 ]]; then
   echo;echo "Delete temp images from container registry"
   ${BUILDER} rmi -f $TMP_THEIA_DEV_BUILDER_IMAGE $TMP_THEIA_BUILDER_IMAGE $TMP_THEIA_RUNTIME_IMAGE $TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE || true
 fi
