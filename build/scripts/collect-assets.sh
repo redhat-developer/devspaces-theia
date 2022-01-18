@@ -189,12 +189,13 @@ extractContainerTgz() {
   subfolder="$4" # optionally, cd into a subfolder in the unpacked container before creating tarball
   doclean="$5" # optionally, clean any leftover temp folders and force re-extraction
 
-  echo "[DEBUG] Before $container extraction:"; debugData
   tmpcontainer="$(echo "$container" | tr "/:" "--")"
   if [[ $doclean == "clean" ]]; then 
     sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true); 
     ${BUILDER} rmi -f $container || true
   fi
+  echo "[DEBUG] Before $container extraction:"; debugData
+  set -x
   unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     # get container and unpack into a /tmp/ folder
@@ -202,7 +203,9 @@ extractContainerTgz() {
   fi
   unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
-    echo "[ERROR] Problem extracting ${container} to /tmp !"; debugData; exit 1
+    echo "[ERROR] Problem extracting ${container} to /tmp !"
+    la -la /tmp/ | grep -E "${tmpcontainer}|${container}"
+    debugData; exit 1
   else
     echo "[INFO] Collect $filesToCollect from $unpackdir into ${targetTarball} ..."
     pushd "${unpackdir}/${subfolder}" >/dev/null || exit 1
@@ -216,6 +219,7 @@ extractContainerTgz() {
     sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true)
   echo "[DEBUG] After $container extraction:"; debugData
   fi
+  set +x
 }
 
 extractContainerFile() {
@@ -245,7 +249,7 @@ collect_arch_assets_crw_theia_dev() {
   time extractContainerTgz "${TMP_THEIA_DEV_BUILDER_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
     home/theia-dev/.yarn-global \
-    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-"${UNAME}".tgz "" "clean"
+    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-"${UNAME}".tgz "./" "clean"
   listAssets "${TARGETDIR}" du
 }
 
@@ -270,7 +274,7 @@ collect_arch_assets_crw_theia() {
   time extractContainerTgz "${TMP_THEIA_BUILDER_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
     home/theia-dev/.yarn-global \
-    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-"${UNAME}".tar.gz "" "clean"
+    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-"${UNAME}".tar.gz "./" "clean"
 
   # post-install dependencies
   # /home/theia-dev/theia-source-code/packages/debug-nodejs/download = node debug vscode binary
@@ -301,7 +305,7 @@ collect_arch_assets_crw_theia() {
   #   /opt/app-root/src/.npm-global'
   time extractContainerTgz "${TMP_THEIA_RUNTIME_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
-    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-runtime-image-"${UNAME}".tar.gz "" "clean"
+    opt/app-root/src/.npm-global" "${TARGETDIR}"/asset-yarn-runtime-image-"${UNAME}".tar.gz "./" "clean"
 
   listAssets "${TARGETDIR}" du
 }
@@ -361,7 +365,7 @@ collect_arch_assets_crw_theia_endpoint_runtime_binary() {
   #   /usr/local/share/.config/yarn/global'
   time extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
-    usr/local/share/.config/yarn/global" "${TARGETDIR}"/asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz "" "clean"
+    usr/local/share/.config/yarn/global" "${TARGETDIR}"/asset-theia-endpoint-runtime-binary-yarn-"${UNAME}".tar.gz "./" "clean"
 
   time extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 'tmp/nexe-cache' "${TARGETDIR}"/asset-theia-endpoint-runtime-pre-assembly-nexe-cache-"${UNAME}".tar.gz "tmp/"
   time extractContainerTgz "${TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE}" 'tmp/nexe' "${TARGETDIR}"/asset-theia-endpoint-runtime-pre-assembly-nexe-"${UNAME}".tar.gz "tmp/"
