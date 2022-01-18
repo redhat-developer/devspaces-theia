@@ -537,7 +537,7 @@ bootstrap_crw_theia() {
   `# copy from builder` \
   -e "s#^COPY branding #COPY --from=builder /tmp/branding #g" \
   `# replace lerna 2 with lerna 4` \
-  `#-e 's#(lerna": ")2[^"]+"#\1>=4.0.0"#'`` \
+  `#-e 's#(lerna": ")2[^"]+"#\1>=4.0.0"#'` \
   "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   # verify that CDN is enabled
