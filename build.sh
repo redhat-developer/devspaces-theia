@@ -309,6 +309,9 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   jq --arg location "$VSCODE_COMMONS" '. += {"vscode-commons": $location}' "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json" > "${TMP_DIR}/theiaPlugins.json"
   mv "${TMP_DIR}/theiaPlugins.json" "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json"
 
+  # CRW-2600 debugging why there's a dependency on lerna 4
+  yarn why lerna
+
   yarn --ignore-scripts
   popd >/dev/null
 fi
