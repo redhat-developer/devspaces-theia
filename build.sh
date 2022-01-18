@@ -430,6 +430,10 @@ bootstrap_crw_theia() {
   echo $CMD; $CMD
   cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile
   cp .Dockerfile .ubi8-dockerfile
+
+  # CRW-2600 patch with why lerna
+  sed_in_place "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile -r -e "s#(yarn .+ yarn build)#yarn why lerna \&\& \1#"
+
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
     # Create one image for builder
     ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
