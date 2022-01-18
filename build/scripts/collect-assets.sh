@@ -191,17 +191,17 @@ extractContainerTgz() {
 
   tmpcontainer="$(echo "$container" | tr "/:" "--")"
   if [[ $doclean == "clean" ]]; then 
-    sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true); 
+    sudo rm -fr $(ls -1d "/tmp/${tmpcontainer}"* 2>/dev/null || true); 
     ${BUILDER} rmi -f $container || true
   fi
   echo "[DEBUG] Before $container extraction:"; debugData
   set -x
-  unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
+  unpackdir="$(ls -1d "/tmp/${tmpcontainer}"* 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     # get container and unpack into a /tmp/ folder
     time /tmp/containerExtract.sh "${container}" --tar-flags "${filesToCollect}"
   fi
-  unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
+  unpackdir="$(ls -1d "/tmp/${tmpcontainer}"* 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     echo "[ERROR] Problem extracting ${container} to /tmp !"
     la -la /tmp/ | grep -E "${tmpcontainer}|${container}"
@@ -216,7 +216,7 @@ extractContainerTgz() {
       fi
       sudo chown -R "${user}:${user}" "${targetTarball}"
     popd >/dev/null || exit 1
-    sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true)
+    sudo rm -fr "/tmp/${tmpcontainer}"* 2>/dev/null || true
   echo "[DEBUG] After $container extraction:"; debugData
   fi
   set +x
@@ -228,18 +228,18 @@ extractContainerFile() {
   targetFile="$3"
   echo "[DEBUG] Before $container extraction:"; debugData
   tmpcontainer="$(echo "$container" | tr "/:" "--")"
-  unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1 || true)"
+  unpackdir="$(ls -1d "/tmp/${tmpcontainer}"* 2>/dev/null | sort -Vr | head -1 || true)"
   if [[ ! ${unpackdir} ]]; then
     # get container and unpack into a /tmp/ folder
     time /tmp/containerExtract.sh "${container}" --tar-flags "${fileToCollect}"
-    unpackdir="$(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null | sort -Vr | head -1)"
+    unpackdir="$(ls -1d "/tmp/${tmpcontainer}"* 2>/dev/null | sort -Vr | head -1)"
   fi
   echo "[INFO] Collect $fileToCollect from $unpackdir into ${targetFile} ..."
   pushd "${unpackdir}" >/dev/null || exit 1
     cp "${fileToCollect}" "${targetFile}" && \
     sudo chown -R "${user}:${user}" "${targetFile}"
   popd >/dev/null || exit 1
-  sudo rm -fr $(find /tmp -name "${tmpcontainer}-*" -type d 2>/dev/null || true)
+  sudo rm -fr "/tmp/${tmpcontainer}"* 2>/dev/null || true
   echo "[DEBUG] After $container extraction:"; debugData
 }
 
