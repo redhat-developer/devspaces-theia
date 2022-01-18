@@ -81,7 +81,7 @@ RUN rm -rf ${HOME}/theia-source-code/examples/browser && \
     rm -rf ${HOME}/theia-source-code/examples/api-tests && \
     rm -rf ${HOME}/theia-source-code/packages/git && \
     # Allow the usage of ELECTRON_SKIP_BINARY_DOWNLOAD=1 by using a more recent version of electron \
-    sed -i 's|  "resolutions": {|  "resolutions": {\n    "**/electron": "7.0.0",\n   "**/lerna": ">=4.0.0",\n    "**/keytar": "7.6.0", \n    "**/node-addon-api": "3.1.0",\n    "**/vscode-ripgrep": "1.12.0",|' ${HOME}/theia-source-code/package.json && \
+    sed -i 's|  "resolutions": {|  "resolutions": {\n    "**/electron": "7.0.0",\n   "**/lerna": "2.2.0",\n    "**/keytar": "7.6.0", \n    "**/node-addon-api": "3.1.0",\n    "**/vscode-ripgrep": "1.12.0",|' ${HOME}/theia-source-code/package.json && \
     # remove all electron-browser module to not compile them
     find . -name "electron-browser"  | xargs rm -rf {} && \
     find . -name "*-electron-module.ts"  | xargs rm -rf {} && \
@@ -141,7 +141,7 @@ RUN rm -fr /home/theia-dev/theia-source-code/node_modules/*/electron /home/theia
 # This is needed for some tools which use this variable and will fail with 401 Unauthorized error if it is invalid.
 # For example, vscode ripgrep downloading is an example of such case.
 RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi && \
-    yarn ${YARN_FLAGS} && yarn build
+    yarn why lerna && yarn ${YARN_FLAGS} && yarn build
 
 # Run into production mode
 # revert offline mode (put back previous DNS resolution)

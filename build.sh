@@ -281,9 +281,9 @@ if [[ ! -d "${TMP_DIR}" ]]; then
       -e '/ +"lerna": .+/a \ \ \ \ "node-addon-api": "3.1.0",'
     grep -E "keytar|node-addon-api"  package.json
 
-    # @since 2.15 CRW-2600 add lerna 4 (unpin ^2.2) https://github.com/eclipse-che/che-theia/commit/86effe8bbe572dcd076641d65fdc91f748c668bd
-    sed_in_place package.json -r \
-      -e 's/( +"lerna": )(".+")/\1 ">=4.0.0"/'
+    # # @since 2.15 CRW-2600 add lerna 4 (unpin ^2.2) https://github.com/eclipse-che/che-theia/commit/86effe8bbe572dcd076641d65fdc91f748c668bd
+    # sed_in_place package.json -r \
+    #   -e 's/( +"lerna": )(".+")/\1 ">=4.0.0"/'
 
     sed_in_place yarn.lock -r \
       -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
@@ -537,7 +537,7 @@ bootstrap_crw_theia() {
   `# copy from builder` \
   -e "s#^COPY branding #COPY --from=builder /tmp/branding #g" \
   `# replace lerna 2 with lerna 4` \
-  -e 's#(lerna": ")2[^"]+"#\1>=4.0.0"#' \
+  `#-e 's#(lerna": ")2[^"]+"#\1>=4.0.0"#'`` \
   "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   # verify that CDN is enabled
