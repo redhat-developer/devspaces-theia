@@ -428,15 +428,15 @@ bootstrap_crw_theia() {
   CMD="./build.sh --dockerfile:Dockerfile.ubi8 --skip-tests --dry-run --tag:next --branch:${THEIA_BRANCH} --target:builder \
     --build-args:GITHUB_TOKEN=${GITHUB_TOKEN},DO_REMOTE_CHECK=false,DO_CLEANUP=false,THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO},THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA}"
   echo $CMD; $CMD
-  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile
-  cp .Dockerfile .ubi8-dockerfile
-
   # CRW-2600 patch with why lerna
-  sed_in_place "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile -r -e "s#(yarn .+ yarn build)#yarn why lerna \&\& \1#"
+  sed_in_place "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile -r -e "s#(yarn .+ yarn build)#yarn why lerna \&\& \1#"
+
+  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${BREW_DOCKERFILE_ROOT_DIR}"/theia/bootstrap.Dockerfile
+  cp "${DOCKERFILES_ROOT_DIR}"/theia/.Dockerfile "${DOCKERFILES_ROOT_DIR}"/theia/.ubi8-dockerfile
 
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
     # Create one image for builder
-    ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
+    ${BUILDER} build -f "${DOCKERFILES_ROOT_DIR}"/theia/.ubi8-dockerfile -t ${TMP_THEIA_BUILDER_IMAGE} --target builder . ${DOCKERFLAGS} \
       --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg THEIA_GITHUB_REPO=${THEIA_GITHUB_REPO} \
       --build-arg THEIA_COMMIT_SHA=${THEIA_COMMIT_SHA} \
       | tee /tmp/TMP_THEIA_BUILDER_IMAGE.log.txt; findErrors /tmp/TMP_THEIA_BUILDER_IMAGE.log.txt
