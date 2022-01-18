@@ -11,7 +11,7 @@
 # This dockerfile is just used to run build.sh locally, but is generally not up to date.
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-12
-FROM registry.access.redhat.com/ubi8/nodejs-12:1-102
+FROM registry.access.redhat.com/ubi8/nodejs-12:1-104
 USER 0
 RUN yum -y -q update && \
     yum -y -q clean all && rm -rf /var/cache/yum && \
