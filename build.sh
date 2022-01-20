@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019-2021 Red Hat, Inc.
+# Copyright (c) 2019-2022 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -13,7 +13,7 @@ set -e
 set -u
 
 # defaults
-nodeVersion="12.22.3" # version of node to use for theia containers (aligned to version in ubi base images)
+nodeVersion="12.22.5" # version of node to use for theia containers (aligned to version in ubi base images)
 # see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
 # podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
 CRW_VERSION="" # must set this via cmdline with --cv, or use --cb to set MIDSTM_BRANCH
@@ -276,20 +276,20 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     sed_in_place dockerfiles/theia/Dockerfile -r \
       -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "7.6.0", \\n    "\*\*/node-addon-api": "3.1.0"|g'
     grep -E "keytar|node-addon-api"  dockerfiles/theia/Dockerfile
+
+    # @since 2.15 - jest is gone, so just use keytar 7.6
     sed_in_place package.json -r \
-      -e '/ +"jest": .+/a \ \ \ \ "keytar": "7.6.0",' \
+      -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "7.6.0"|g' \
       -e '/ +"lerna": .+/a \ \ \ \ "node-addon-api": "3.1.0",'
     grep -E "keytar|node-addon-api"  package.json
 
-    # # @since 2.15 CRW-2600 add lerna 4 (unpin ^2.2) https://github.com/eclipse-che/che-theia/commit/86effe8bbe572dcd076641d65fdc91f748c668bd
-    # sed_in_place package.json -r \
-    #   -e 's/( +"lerna": )(".+")/\1 ">=4.0.0"/'
-
     sed_in_place yarn.lock -r \
-      -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
+      -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@\^7.7.0|keytar@7.6.0|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
       -e 's|keytar-7.7.0.tgz#3002b106c01631aa79b1aa9ee0493b94179bbbd2|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100|' \
       -e 's|sha512-YEY9HWqThQc5q5xbXbRwsZTh2PJ36OSYRjSv3NN2xf5s5dpLTjEZnC2YikR29OaVybf9nQ0dJ/80i40RS97t/A==|sha512-H3cvrTzWb11+iv0NOAnoNAPgEapVZnYLVHZQyxmh7jdmVfR/c0jNNFEZ6AI38W/4DeTGTaY66ZX4Z1SbfKPvCQ==|' \
       -e 's|node-addon-api "\^3.0.0"|node-addon-api "3.1.0"|g' \
+      `# @since 2.15 - CRW-2656 remove entire node-addon-api block, which currently resolves to 4.0.0 (we want 3.1.0)` \
+      -e '/node-addon-api@\*:/,+4d' \
       -e '/node-addon-api@\^3.0.0/{n;d}';
     sed_in_place yarn.lock -r \
       -e '/node-addon-api@\^3.0.0/a \ \ version "3.1.0"' \
