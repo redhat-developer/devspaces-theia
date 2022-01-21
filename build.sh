@@ -275,24 +275,34 @@ if [[ ! -d "${TMP_DIR}" ]]; then
     # @since 2.15 CRW-2656 - these changes have been applied in che-theia, so don't need them in crw-theia
     # keeping comments for reference in case new dockerfile/package.json/yarn.lock changes break CRW, and we need to do testing/updates here
 
-    # # @since 2.11 - CRW-2156 - use keytar 7.6
+    # # @since 2.11 - CRW-2156 - use keytar 7.6 + node-addon-api in Eclipse Theia sources
     # sed_in_place dockerfiles/theia/Dockerfile -r \
-    #   -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "7.6.0", \\n    "\*\*/node-addon-api": "3.1.0"|g'
+    #   -e 's|"\*\*/keytar": "\^7.[0-9].0"|"\*\*/keytar": "7.6.0", \\n    "\*\*/node-addon-api": "3.1.0"|g'
     # grep -E "keytar|node-addon-api"  dockerfiles/theia/Dockerfile
 
-    # # @since 2.15 - jest is gone, so just use keytar 7.6
+    # # @since 2.15 - include both node-addon-api 1.7.2 and 3.1.0 in Che Theia sources
     # sed_in_place package.json -r \
-    #   -e 's|"\*\*/keytar": "\^7.7.0"|"\*\*/keytar": "7.6.0"|g' \
-    #   -e '/ +"lerna": .+/a \ \ \ \ "node-addon-api": "3.1.0",'
+    #   -e 's|node-addon-api": ".+",|node-addon-api": "1.7.2",|g' \
+    #   -e '/ +"node-addon-api": .+/a \ \ \ \ "node-addon-api-latest": "npm:node-addon-api@3.1.0",'
     # grep -E "keytar|node-addon-api"  package.json
+    # # remove lerna from resolutions as it's in devDependencies
+    # jq -r 'del(.resolutions.lerna)' package.json > package.json1; mv package.json1 package.json
 
+    # # @since 2.15 - replace keytar 7.x with 7.6 in Che Theia sources
+    # sed_in_place ./generator/tests/init-sources/templates/theia-core-package.json -r \
+    #   -e 's|"keytar": "7.[0-9].0"|"keytar": "7.6.0"|g'
+    # grep -E "keytar|node-addon-api" ./generator/tests/init-sources/templates/theia-core-package.json
+
+    # # @since 2.15 - replace keytar 7.x with 7.6; include both node-addon-api 1.7.2 and 3.1.0 in Che Theia sources
     # sed_in_place yarn.lock -r \
-    #   -e 's|keytar "7.7.0"|keytar "7.6.0"|' -e 's|keytar@\^7.7.0|keytar@7.6.0|' -e 's|keytar@7.7.0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
-    #   -e 's|keytar-7.7.0.tgz#3002b106c01631aa79b1aa9ee0493b94179bbbd2|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100|' \
+    #   -e 's|keytar "7.[0-9].0"|keytar "7.6.0"|' -e 's|keytar@\^7.[0-9].0|keytar@7.6.0|' -e 's|keytar@7.[0-9].0|keytar@7.6.0|' -e 's|version "7.7.0"|version "7.6.0"|' \
+    #   -e 's|keytar@7.6.0, keytar@7.6.0|keytar@7.6.0|' \
+    #   -e 's|keytar-.+.tgz#.+|keytar-7.6.0.tgz#498e796443cb543d31722099443f29d7b5c44100"|' \
     #   -e 's|sha512-YEY9HWqThQc5q5xbXbRwsZTh2PJ36OSYRjSv3NN2xf5s5dpLTjEZnC2YikR29OaVybf9nQ0dJ/80i40RS97t/A==|sha512-H3cvrTzWb11+iv0NOAnoNAPgEapVZnYLVHZQyxmh7jdmVfR/c0jNNFEZ6AI38W/4DeTGTaY66ZX4Z1SbfKPvCQ==|' \
     #   -e 's|node-addon-api "\^3.0.0"|node-addon-api "3.1.0"|g' \
     #   `# @since 2.15 - CRW-2656 remove entire node-addon-api block, which currently resolves to 4.0.0 (we want 3.1.0)` \
     #   -e '/node-addon-api@\*:/,+4d' \
+    #   -e '/node-addon-api@^1.+:/,+4d' \
     #   -e '/node-addon-api@\^3.0.0/{n;d}';
     # sed_in_place yarn.lock -r \
     #   -e '/node-addon-api@\^3.0.0/a \ \ version "3.1.0"' \
