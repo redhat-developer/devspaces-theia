@@ -27,7 +27,7 @@ Steps:
 
 The Jenkinsfiles in this repo have moved. See:
 
-* https://main-jenkins-csb-crwqe.apps.ocp4.prod.psi.redhat.com/job/CRW_CI/ (jobs) :door:
+* https://main-jenkins-csb-crwqe.apps.ocp-c1.prod.psi.redhat.com/job/CRW_CI/ (jobs) :door:
 * https://gitlab.cee.redhat.com/codeready-workspaces/crw-jenkins/-/tree/master/jobs/CRW_CI (sources) :door:
 * https://github.com/redhat-developer/codeready-workspaces-images#jenkins-jobs (copied sources)
 
