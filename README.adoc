@@ -38,7 +38,7 @@ Branding is currently in two places.
 
 ### Dashboard
 
-To reskin link:https://github.com/eclipse-che/che-dashboard/tree/main/assets/branding[Che Dashboard], see link:https://github.com/redhat-developer/codeready-workspaces-images/tree/crw-2-rhel-8/codeready-workspaces-dashboard/README.adoc[dashboard]
+To reskin link:https://github.com/eclipse-che/che-dashboard/tree/main/packages/dashboard-frontend/packages/dashboard-frontend/assets/brandingassets/branding[Che Dashboard], see link:https://github.com/redhat-developer/codeready-workspaces-images/tree/crw-2-rhel-8/codeready-workspaces-dashboard/README.adoc#branding[dashboard]
 
 ### Theia
 
