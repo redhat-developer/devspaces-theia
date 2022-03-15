@@ -22,23 +22,23 @@ if [[ -r ./BUILD_PARAMS ]]; then source ./BUILD_PARAMS; fi
 # try to compute a value for MIDSTM_BRANCH based on current dir
 if [[ ! ${MIDSTM_BRANCH} ]]; then 
   MIDSTM_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-  if [[ $MIDSTM_BRANCH != "crw-2."*"-rhel-8" ]] && [[ $MIDSTM_BRANCH != "crw-2-rhel-8" ]]; then
+  if [[ $MIDSTM_BRANCH != "devspaces-3."*"-rhel-8" ]] && [[ $MIDSTM_BRANCH != "devspaces-3-rhel-8" ]]; then
     MIDSTM_BRANCH="" # invalid branch, so reset
   fi
 fi
 
-if [[ ${MIDSTM_BRANCH} ]]; then usage_branch="${MIDSTM_BRANCH}"; else usage_branch="crw-2-rhel-8"; fi
+if [[ ${MIDSTM_BRANCH} ]]; then usage_branch="${MIDSTM_BRANCH}"; else usage_branch="devspaces-3-rhel-8"; fi
 usage () {
   echo "Run this script from the destination folder where you want asset files created, eg., where you have 
-pkgs.devel codeready-workspaces-theia-dev checked out. Repeat for theia and theia-endpoint pkgs.devel repos.
+pkgs.devel devspaces-theia-dev checked out. Repeat for theia and theia-endpoint pkgs.devel repos.
 
 Usage:
-  $0 --cb MIDSTM_BRANCH --target /path/to/pkgs.devel/crw-theia-dev/ [options]
+  $0 --cb MIDSTM_BRANCH --target /path/to/pkgs.devel/devspaces-theia-dev/ [options]
 
 Examples:
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/crw-theia-dev/      -d --rmi:tmp --ci --commit
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/crw-theia/          -t --rmi:tmp --ci --commit
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/crw-theia-endpoint/ -e --rmi:tmp --ci --commit
+  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-dev/      -d --rmi:tmp --ci --commit
+  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia/          -t --rmi:tmp --ci --commit
+  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-endpoint/ -e --rmi:tmp --ci --commit
 
 Directory flags:
   --target     | instead of writing assets into current dir $(pwd)/, target a different place
@@ -52,8 +52,8 @@ Architecture flags:
   --platforms \"${PLATFORMS}\" | architectures for which to collect assets
 
 Optional flags:
-  --cb             | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., crw-2.y-rhel-8 or ${MIDSTM_BRANCH}
-  --cv             | rather than pull from CRW_BRANCH version of redhat-developer/codeready-workspaces/dependencies/VERSION file, 
+  --cb             | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
+  --cv             | rather than pull from CRW_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
                    | just set CRW_VERSION; default: ${CRW_VERSION}
   --nv             | node version to use; default: ${nodeVersion}
   --pr             | if building based on a GH pull request, use 'pr' in tag names instead of 'tmp'
@@ -74,9 +74,9 @@ COMMIT_CHANGES=0
 
 for key in "$@"; do
   case $key in 
-      '-d'|'--theia-dev') ARCHSTEPS="collect_arch_assets_crw_theia_dev"; NOARCHSTEPS="collect_noarch_assets_crw_theia_dev"; shift 1;;
-      '-t'|'--theia') ARCHSTEPS="collect_arch_assets_crw_theia"; NOARCHSTEPS="collect_noarch_assets_crw_theia"; shift 1;;
-      '-e'|'-b'|'--theia-endpoint'|'--theia-endpoint-runtime-binary') ARCHSTEPS="collect_arch_assets_crw_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_crw_theia_endpoint_runtime_binary"; shift 1;;
+      '-d'|'--theia-dev') ARCHSTEPS="collect_arch_assets_ds_theia_dev"; NOARCHSTEPS="collect_noarch_assets_ds_theia_dev"; shift 1;;
+      '-t'|'--theia') ARCHSTEPS="collect_arch_assets_ds_theia"; NOARCHSTEPS="collect_noarch_assets_ds_theia"; shift 1;;
+      '-e'|'-b'|'--theia-endpoint'|'--theia-endpoint-runtime-binary') ARCHSTEPS="collect_arch_assets_ds_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_ds_theia_endpoint_runtime_binary"; shift 1;;
       '--target') TARGETDIR="$2"; shift 2;;
       '--platforms') PLATFORMS="$2"; shift 2;;
       '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
@@ -92,23 +92,23 @@ for key in "$@"; do
 done
 
 if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
-  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
+  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${CRW_VERSION} ]]; then 
-  echo "[ERROR] Must set either --cb crw-2.y-rhel-8 or --cv 2.y to define the version of CRW Theia for which to collect assets."; echo
+  echo "[ERROR] Must set either --cb devspaces-3.y-rhel-8 or --cv 3.y to define the version of CRW Theia for which to collect assets."; echo
   usage
 fi
 echo "[INFO] Using MIDSTM_BRANCH = ${MIDSTM_BRANCH} and CRW_VERSION = ${CRW_VERSION}"
 if [[ ! $ARCHSTEPS ]] || [[ ! $NOARCHSTEPS ]]; then 
   if [[ ${TARGETDIR} = *"theia-dev"* ]]; then 
     echo "[INFO] No step flag set, but TARGETDIR appears to be a theia-dev folder."
-    ARCHSTEPS="collect_arch_assets_crw_theia_dev"; NOARCHSTEPS="collect_noarch_assets_crw_theia_dev";
+    ARCHSTEPS="collect_arch_assets_ds_theia_dev"; NOARCHSTEPS="collect_noarch_assets_ds_theia_dev";
   elif [[ ${TARGETDIR} = *"theia" ]] || [[ ${TARGETDIR} = *"theia/" ]]; then 
     echo "[INFO] No step flag set, but TARGETDIR appears to be a theia folder."
-    ARCHSTEPS="collect_arch_assets_crw_theia"; NOARCHSTEPS="collect_noarch_assets_crw_theia";
+    ARCHSTEPS="collect_arch_assets_ds_theia"; NOARCHSTEPS="collect_noarch_assets_ds_theia";
   elif [[ ${TARGETDIR} = *"theia-endpoint"* ]] || [[ ${TARGETDIR} = *"theia-endpoint-runtime-binary"* ]]; then 
     echo "[INFO] No step flag set, but TARGETDIR appears to be a theia-endpoint folder."
-    ARCHSTEPS="collect_arch_assets_crw_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_crw_theia_endpoint_runtime_binary";
+    ARCHSTEPS="collect_arch_assets_ds_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_ds_theia_endpoint_runtime_binary";
   else 
     echo "[ERROR] Nothing to do! set steps to perform with -d, -t-, -e flags."; echo
     usage
@@ -120,12 +120,12 @@ mkdir -p $TARGETDIR
 
 getContainerExtract() {
   pushd /tmp >/dev/null || exit
-  if [[ ${CRW_VERSION} ]] && ! [[ $(curl -sSI https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-${CRW_VERSION}-rhel-8/product/containerExtract.sh | grep HTTP | grep 404 || true) ]]; then
-    curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-${CRW_VERSION}-rhel-8/product/containerExtract.sh
-  elif [[ ${MIDSTM_BRANCH} ]] && [[ ! $(curl -sSI https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/product/containerExtract.sh | grep HTTP | grep 404 || true) ]]; then
-    curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/product/containerExtract.sh
+  if [[ ${CRW_VERSION} ]] && ! [[ $(curl -sSI https://raw.githubusercontent.com/redhat-developer/devspaces/devspaces-${CRW_VERSION}-rhel-8/product/containerExtract.sh | grep HTTP | grep 404 || true) ]]; then
+    curl -sSLO https://raw.githubusercontent.com/redhat-developer/devspaces/devspaces-${CRW_VERSION}-rhel-8/product/containerExtract.sh
+  elif [[ ${MIDSTM_BRANCH} ]] && [[ ! $(curl -sSI https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/product/containerExtract.sh | grep HTTP | grep 404 || true) ]]; then
+    curl -sSLO https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/product/containerExtract.sh
   else
-    curl -sSLO https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/crw-2-rhel-8/product/containerExtract.sh
+    curl -sSLO https://raw.githubusercontent.com/redhat-developer/devspaces/devspaces-3-rhel-8/product/containerExtract.sh
   fi
   chmod +x /tmp/containerExtract.sh
   popd >/dev/null || exit
@@ -133,10 +133,10 @@ getContainerExtract() {
 
 setImages() {
   if [[ ! $1 ]]; then UNAME="$(uname -m)"; else UNAME=$1; fi
-  TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-  TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-  TMP_THEIA_RUNTIME_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
-  TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+  TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/devspaces/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+  TMP_THEIA_BUILDER_IMAGE="quay.io/devspaces/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+  TMP_THEIA_RUNTIME_IMAGE="quay.io/devspaces/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
+  TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/devspaces/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 }
 
 BUILDER=$(command -v podman || true)
@@ -248,7 +248,7 @@ extractContainerFile() {
 
 ########################### theia-dev
 
-collect_arch_assets_crw_theia_dev() {
+collect_arch_assets_ds_theia_dev() {
   time extractContainerTgz "${TMP_THEIA_DEV_BUILDER_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
     home/theia-dev/.yarn-global \
@@ -261,14 +261,14 @@ collect_arch_assets_crw_theia_dev() {
   fi
 }
 
-collect_noarch_assets_crw_theia_dev() {
+collect_noarch_assets_ds_theia_dev() {
   # build generator tarball
   export "$(cat BUILD_PARAMS | grep -E "^SOURCE_BRANCH")" && SOURCE_BRANCH=${SOURCE_BRANCH//\"/}
   cheTheiaSourcesDir="$(mktemp -d)"
   pushd "$cheTheiaSourcesDir" >/dev/null || exit 1
     git clone https://github.com/eclipse-che/che-theia
     cd che-theia && git checkout $SOURCE_BRANCH
-    sed -i 's|Eclipse Che|CodeReady Workspaces|g' ./generator/src/templates/assembly-package.mst.json
+    sed -i 's|Eclipse Che|Red Hat OpenShift Dev Spaces|g' ./generator/src/templates/assembly-package.mst.json
     cd generator && yarn && yarn pack --filename "${TARGETDIR}"/asset-eclipse-che-theia-generator.tgz
   popd >/dev/null || exit 1
   rm -fr "${cheTheiaSourcesDir}"
@@ -278,7 +278,7 @@ collect_noarch_assets_crw_theia_dev() {
 
 ########################### theia
 
-collect_arch_assets_crw_theia() {
+collect_arch_assets_ds_theia() {
   # TODO why do we have a slightly different filename here than in theia-dev assets? 
   time extractContainerTgz "${TMP_THEIA_BUILDER_IMAGE}" "\
     usr/local/share/.cache/yarn/v*/ \
@@ -319,7 +319,7 @@ collect_arch_assets_crw_theia() {
   listAssets "${TARGETDIR}" du
 }
 
-collect_noarch_assets_crw_theia() {
+collect_noarch_assets_ds_theia() {
   # node-headers
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}-headers.tar.gz"
   echo -n "Local node version: "; node --version
@@ -370,7 +370,7 @@ collect_noarch_assets_crw_theia() {
 
 ########################### theia-endpoint
 
-collect_arch_assets_crw_theia_endpoint_runtime_binary() {
+collect_arch_assets_ds_theia_endpoint_runtime_binary() {
   # npm/yarn cache
   # /usr/local/share/.cache/yarn/v*/ = yarn cache dir
   # /usr/local/share/.config/yarn/global
@@ -393,7 +393,7 @@ collect_arch_assets_crw_theia_endpoint_runtime_binary() {
   fi
 }
 
-collect_noarch_assets_crw_theia_endpoint_runtime_binary() {
+collect_noarch_assets_ds_theia_endpoint_runtime_binary() {
   # node-src
   download_url="https://nodejs.org/download/release/v${nodeVersion}/node-v${nodeVersion}.tar.gz"
   echo -n "Local node version: "; node --version
@@ -441,7 +441,7 @@ if [[ $(listAssets "${TARGETDIR}") ]]; then
   du -sch "${TARGETDIR}"/asset-*
   echo
 fi
-if [[ NOARCHSTEPS == *"collect_noarch_assets_crw_theia_endpoint_runtime_binary"* ]] && [[ $(listWheels "${TARGETDIR}") ]]; then
+if [[ NOARCHSTEPS == *"collect_noarch_assets_ds_theia_endpoint_runtime_binary"* ]] && [[ $(listWheels "${TARGETDIR}") ]]; then
   echo; echo "Python wheels collected. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
   du -sch "${TARGETDIR}"/*.whl
   echo

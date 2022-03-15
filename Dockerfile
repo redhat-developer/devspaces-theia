@@ -23,7 +23,7 @@ ARG GITHUB_TOKEN=YOUR_TOKEN_HERE
 RUN if [[ ${GITHUB_TOKEN} == "YOUR_TOKEN_HERE" ]]; then \
   echo; echo "ERROR: Must run this build with a valid GITHUB_TOKEN, eg.,"; \
   echo; \
-  echo "  podman build -t crw-theia-builder . -f Dockerfile --build-arg GITHUB_TOKEN=cafef00dd00dbabebeaddabbadd00"; \
+  echo "  podman build -t devspaces-theia-builder . -f Dockerfile --build-arg GITHUB_TOKEN=cafef00dd00dbabebeaddabbadd00"; \
   echo; exit 1; \
 fi
 
