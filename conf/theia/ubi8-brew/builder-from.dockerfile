@@ -1,1 +1,1 @@
-FROM quay.io/crw/theia-dev-rhel8:next as builder
+FROM quay.io/devspaces/theia-dev-rhel8:next as builder

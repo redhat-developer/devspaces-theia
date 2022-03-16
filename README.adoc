@@ -2,13 +2,13 @@ Links marked with this icon :door: are _internal to Red Hat_. This includes Jenk
 
 ## What's inside?
 
-NOTE: the so-called master branch is deprecated and is no longer kept up to date. Instead, the latest nightly sources are in **crw-2-rhel-8 branch**, synced to upstream projects' main (or master) branches.
+NOTE: the so-called master branch is deprecated and is no longer kept up to date. Instead, the latest nightly sources are in **devspaces-3-rhel-8 branch**, synced to upstream projects' main (or master) branches.
 
-For the latest stable release, see the **crw-2.y-rhel-8** branch with the largest y value.
+For the latest stable release, see the **devspaces-3.y-rhel-8** branch with the largest y value.
 
 ---
 
-This repo contains the code for the CodeReady Workspaces build of Theia, based on the link:https://github.com/eclipse-che/che-theia[che-theia] project.
+This repo contains the code for the Red Hat OpenShift Dev Spaces build of Theia, based on the link:https://github.com/eclipse-che/che-theia[che-theia] project.
 
 ## Create dockerfiles for theia in brew
 
@@ -28,8 +28,8 @@ Steps:
 The Jenkinsfiles in this repo have moved. See:
 
 * https://main-jenkins-csb-crwqe.apps.ocp-c1.prod.psi.redhat.com/job/CRW_CI/ (jobs) :door:
-* https://gitlab.cee.redhat.com/codeready-workspaces/crw-jenkins/-/tree/master/jobs/CRW_CI (sources) :door:
-* https://github.com/redhat-developer/codeready-workspaces-images#jenkins-jobs (copied sources)
+* https://gitlab.cee.redhat.com/devspaces/crw-jenkins/-/tree/master/jobs/CRW_CI (sources) :door:
+* https://github.com/redhat-developer/devspaces-images#jenkins-jobs (copied sources)
 
 
 ## Branding
@@ -38,11 +38,11 @@ Branding is currently in two places.
 
 ### Dashboard
 
-To reskin link:https://github.com/eclipse-che/che-dashboard/tree/main/packages/dashboard-frontend/packages/dashboard-frontend/assets/brandingassets/branding[Che Dashboard], see link:https://github.com/redhat-developer/codeready-workspaces-images/tree/crw-2-rhel-8/codeready-workspaces-dashboard/README.adoc#branding[dashboard]
+To reskin link:https://github.com/eclipse-che/che-dashboard/tree/main/packages/dashboard-frontend/packages/dashboard-frontend/assets/brandingassets/branding[Che Dashboard], see link:https://github.com/redhat-developer/devspaces-images/tree/devspaces-3-rhel-8/devspaces-dashboard/README.adoc#branding[dashboard]
 
 ### Theia
 
-To reskin link:https://github.com/eclipse-che/che-theia[Che Theia], see link:https://github.com/redhat-developer/codeready-workspaces-theia/tree/crw-2-rhel-8/conf/theia/branding[codeready-workspaces-theia/conf/theia/branding]. 
+To reskin link:https://github.com/eclipse-che/che-theia[Che Theia], see link:https://github.com/redhat-developer/devspaces-theia/tree/devspaces-3-rhel-8/conf/theia/branding[devspaces-theia/conf/theia/branding]. 
 
 ### A note about SVG files 
 

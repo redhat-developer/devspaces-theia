@@ -1,9 +1,9 @@
 # copy previously cached yq dependency wheels for offline install
 COPY *.whl /tmp
 
-ENV SUMMARY="Red Hat CodeReady Workspaces - theia-endpoint container" \
-    DESCRIPTION="Red Hat CodeReady Workspaces - theia-endpoint container" \
-    PRODNAME="codeready-workspaces" \
+ENV SUMMARY="Red Hat OpenShift Dev Spaces - theia-endpoint container" \
+    DESCRIPTION="Red Hat OpenShift Dev Spaces - theia-endpoint container" \
+    PRODNAME="devspaces" \
     COMPNAME="theia-endpoint-rhel8" 
 
 LABEL summary="$SUMMARY" \

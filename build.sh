@@ -43,8 +43,8 @@ See https://github.com/settings/tokens for more information.
 Examples:
   $(if [[ -r ./BUILD_COMMAND ]]; then cat ./BUILD_COMMAND; fi)
 
-  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cb crw-2.y-rhel-8
-  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cv 2.y
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cb devspaces-3.y-rhel-8
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cv 3.y
 
 Options:
   $0 -d      | build theia-dev
@@ -56,8 +56,8 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
   --ctb      | CHE_THEIA_BRANCH from which to sync into CRW; default: ${SOURCE_BRANCH}
-  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., crw-2.y-rhel-8 or ${MIDSTM_BRANCH}
-  --cv       | rather than pull from CRW_BRANCH version of redhat-developer/codeready-workspaces/dependencies/VERSION file, 
+  --cb       | CRW_BRANCH from which to compute version of CRW to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
+  --cv       | rather than pull from CRW_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
              | just set CRW_VERSION; default: ${CRW_VERSION}
   --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, default: ${THEIA_BRANCH} [never change this]
   --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, default: ${THEIA_GITHUB_REPO}
@@ -111,10 +111,10 @@ for key in "$@"; do
       '--tcs') THEIA_COMMIT_SHA="$2"; shift 2;;
       '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
       '--cv')  CRW_VERSION="$2"; shift 2;;
-      '-d') STEPS="${STEPS} bootstrap_crw_theia_dev"; shift 1;;
-      '-t') STEPS="${STEPS} bootstrap_crw_theia"; shift 1;;
-      '-e'|'-b') STEPS="${STEPS} bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
-      '--all') STEPS="bootstrap_crw_theia_dev bootstrap_crw_theia bootstrap_crw_theia_endpoint_runtime_binary"; shift 1;;
+      '-d') STEPS="${STEPS} bootstrap_ds_theia_dev"; shift 1;;
+      '-t') STEPS="${STEPS} bootstrap_ds_theia"; shift 1;;
+      '-e'|'-b') STEPS="${STEPS} bootstrap_ds_theia_endpoint_runtime_binary"; shift 1;;
+      '--all') STEPS="bootstrap_ds_theia_dev bootstrap_ds_theia bootstrap_ds_theia_endpoint_runtime_binary"; shift 1;;
       '--no-images') DO_DOCKER_BUILDS=0; shift 1;;
       '--no-cache') DOCKERFLAGS="${DOCKERFLAGS} $1"; shift 1;;
       '--rm-cache') DELETE_CACHE_IMAGES=1; shift 1;;
@@ -132,10 +132,10 @@ for key in "$@"; do
 done
 
 if [[ ! ${CRW_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
-  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
+  CRW_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${CRW_VERSION} ]]; then 
-  echo "Error: must set either --cb crw-2.y-rhel-8 or --cv 2.y to define the version of CRW Theia to build."
+  echo "Error: must set either --cb devspaces-3.y-rhel-8 or --cv 3.y to define the version of CRW Theia to build."
   usage
 fi
 
@@ -162,9 +162,9 @@ echo "[INFO] Using Eclipse Theia commit SHA THEIA_COMMIT_SHA = ${THEIA_COMMIT_SH
 #need to edit conf/theia/ubi8-brew/builder-from.dockerfile file as well for now
 #need to edit conf/theia-endpoint-runtime/ubi8-brew/builder-from.dockerfile file as well for now
 UNAME="$(uname -m)"
-CHE_THEIA_DEV_IMAGE_NAME="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${UNAME}"
-CHE_THEIA_IMAGE_NAME="quay.io/crw/theia-rhel8:${CRW_VERSION}-${UNAME}"
-CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${UNAME}"
+CHE_THEIA_DEV_IMAGE_NAME="quay.io/devspaces/theia-dev-rhel8:${CRW_VERSION}-${UNAME}"
+CHE_THEIA_IMAGE_NAME="quay.io/devspaces/theia-rhel8:${CRW_VERSION}-${UNAME}"
+CHE_THEIA_ENDPOINT_BINARY_IMAGE_NAME="quay.io/devspaces/theia-endpoint-rhel8:${CRW_VERSION}-${UNAME}"
 
 base_dir=$(cd "$(dirname "$0")"; pwd)
 
@@ -173,10 +173,10 @@ TMP_DIR=${base_dir}/tmp
 BREW_DOCKERFILE_ROOT_DIR="${base_dir}/dockerfiles"
 CHE_THEIA_DIR="${TMP_DIR}/che-theia"
 
-TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/crw/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-TMP_THEIA_BUILDER_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
-TMP_THEIA_RUNTIME_IMAGE="quay.io/crw/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
-TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/crw/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+TMP_THEIA_DEV_BUILDER_IMAGE="quay.io/devspaces/theia-dev-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+TMP_THEIA_BUILDER_IMAGE="quay.io/devspaces/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
+TMP_THEIA_RUNTIME_IMAGE="quay.io/devspaces/theia-rhel8:${CRW_VERSION}-${BUILD_TYPE}-runtime-${UNAME}"
+TMP_THEIA_ENDPOINT_BINARY_BUILDER_IMAGE="quay.io/devspaces/theia-endpoint-rhel8:${CRW_VERSION}-${BUILD_TYPE}-builder-${UNAME}"
 
 rmi_images() {
   set +x
@@ -272,7 +272,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
   pushd "${CHE_THEIA_DIR}" >/dev/null
     # TODO add some patches into ./patches/ and apply them here
 
-    # @since 2.15 CRW-2656 - these changes have been applied in che-theia, so don't need them in crw-theia
+    # @since 2.15 CRW-2656 - these changes have been applied in che-theia, so don't need them in devspaces-theia
     # keeping comments for reference in case new dockerfile/package.json/yarn.lock changes break CRW, and we need to do testing/updates here
 
     # # @since 2.11 - CRW-2156 - use keytar 7.6 + node-addon-api in Eclipse Theia sources
@@ -318,7 +318,7 @@ if [[ ! -d "${TMP_DIR}" ]]; then
 
   # Patch theiaPlugins.json to add vscode-commons as a built-in
   # See CRW-1894
-  VSCODE_COMMONS="https://github.com/redhat-developer/codeready-workspaces-vscode-extensions/releases/download/v608e3a2/redhat.vscode-commons-021b0165bb5ba05e107ee7e31d1e59a7a73f473c.vsix"
+  VSCODE_COMMONS="https://github.com/redhat-developer/devspaces-vscode-extensions/releases/download/v608e3a2/redhat.vscode-commons-021b0165bb5ba05e107ee7e31d1e59a7a73f473c.vsix"
   jq --arg location "$VSCODE_COMMONS" '. += {"vscode-commons": $location}' "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json" > "${TMP_DIR}/theiaPlugins.json"
   mv "${TMP_DIR}/theiaPlugins.json" "${CHE_THEIA_DIR}/generator/src/templates/theiaPlugins.json"
 
@@ -332,11 +332,11 @@ fi
 mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"
 DOCKERFILES_ROOT_DIR="${CHE_THEIA_DIR}/dockerfiles"
 
-bootstrap_crw_theia_dev() {
+bootstrap_ds_theia_dev() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia-dev
 
-  # apply overrides from crw-theia
+  # apply overrides from devspaces-theia
   if [[ -d conf/theia-dev/ubi8/ ]]; then cp conf/theia-dev/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia-dev/docker/ubi8/; fi
   # build only ubi8 image
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-dev >/dev/null
@@ -422,10 +422,10 @@ bootstrap_crw_theia_dev() {
   #   echo "<====  ${d} ===="
   # done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   # popd >/dev/null
-} # end bootstrap_crw_theia_dev
+} # end bootstrap_ds_theia_dev
 
 # now do che-theia
-bootstrap_crw_theia() {
+bootstrap_ds_theia() {
   # pull the temp image from quay so we can use it in this build, but rename it because che-theia hardcodes image dependencies
   ${BUILDER} pull "${TMP_THEIA_DEV_BUILDER_IMAGE}"
   ${BUILDER} tag "${TMP_THEIA_DEV_BUILDER_IMAGE}" eclipse/che-theia-dev:next || true
@@ -433,7 +433,7 @@ bootstrap_crw_theia() {
   cd "${base_dir}"
   mkdir -p "${BREW_DOCKERFILE_ROOT_DIR}"/theia
 
-  # apply overrides from crw-theia
+  # apply overrides from devspaces-theia
   if [[ -d conf/theia/ubi8/ ]]; then cp conf/theia/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia/docker/ubi8/; fi
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia >/dev/null
@@ -514,7 +514,7 @@ bootstrap_crw_theia() {
   -e "s#FROM registry.redhat.io/#FROM #g" \
   -e "s#FROM registry.access.redhat.com/#FROM #g" \
   `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
-  -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
+  -e "s#quay.io/devspaces/#registry-proxy.engineering.redhat.com/rh-osbs/devspaces-#g" \
   `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
   -e "s#(theia-.+):next#\1:${CRW_VERSION}#g" \
   > "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
@@ -542,7 +542,7 @@ bootstrap_crw_theia() {
   # ${BUILDER} push "${CHE_THEIA_IMAGE_NAME}"
 
   # Set the CDN options inside the Dockerfile
-  sed_in_place -r -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/crw_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
+  sed_in_place -r -e 's#ARG CDN_PREFIX=.+#ARG CDN_PREFIX="https://static.developers.redhat.com/che/ds_theia_artifacts/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
   sed_in_place -r -e 's#ARG MONACO_CDN_PREFIX=.+#ARG MONACO_CDN_PREFIX="https://cdn.jsdelivr.net/npm/"#' "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   sed_in_place -r \
@@ -561,7 +561,7 @@ bootstrap_crw_theia() {
   "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile
 
   # verify that CDN is enabled
-  grep -E "https://static.developers.redhat.com/che/crw_theia_artifacts/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
+  grep -E "https://static.developers.redhat.com/che/ds_theia_artifacts/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
   grep -E "https://cdn.jsdelivr.net/npm/" "${BREW_DOCKERFILE_ROOT_DIR}"/theia/Dockerfile || exit 1
 
   # echo "-=-=-=- dockerfiles -=-=-=->"
@@ -576,10 +576,10 @@ bootstrap_crw_theia() {
   #   echo "<====  ${d} ===="
   # done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   # popd >/dev/null
-} # end bootstrap_crw_theia
+} # end bootstrap_ds_theia
 
 # now do che-theia-endpoint-runtime-binary
-bootstrap_crw_theia_endpoint_runtime_binary() {
+bootstrap_ds_theia_endpoint_runtime_binary() {
   # pull the temp image from quay so we can use it in this build, but rename it because che-theia endpoint hardcodes image dependencies
   ${BUILDER} pull "${TMP_THEIA_RUNTIME_IMAGE}"
   ${BUILDER} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
@@ -621,7 +621,7 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   rsync -azrlt --checksum --delete "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/src/* src/
   popd >/dev/null
 
-  # apply overrides from crw-theia
+  # apply overrides from devspaces-theia
   if [[ -d conf/theia-endpoint-runtime-binary/ubi8/ ]]; then cp conf/theia-endpoint-runtime-binary/ubi8/* "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/; fi
   # build only ubi8 image and for target builder first, so we can extract data
   pushd "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary >/dev/null
@@ -664,7 +664,7 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   -e "s#FROM registry.redhat.io/#FROM #g" \
   -e "s#FROM registry.access.redhat.com/#FROM #g" \
   `# cannot resolve quay from inside Brew so use internal mirror w/ revised container name` \
-  -e "s#quay.io/crw/#registry-proxy.engineering.redhat.com/rh-osbs/codeready-workspaces-#g" \
+  -e "s#quay.io/devspaces/#registry-proxy.engineering.redhat.com/rh-osbs/devspaces-#g" \
   `# cannot resolve theia-rhel8:next, theia-dev-rhel8:next from inside Brew so use revised container tag` \
   -e "s#(theia-.+):next#\1:${CRW_VERSION}#g" \
   > "${BREW_DOCKERFILE_ROOT_DIR}"/theia-endpoint-runtime-binary/Dockerfile
@@ -685,7 +685,7 @@ bootstrap_crw_theia_endpoint_runtime_binary() {
   #   echo "<====  ${d} ===="
   # done <   <(find . -type f -regextype posix-extended -iregex '.+(Dockerfile).*' -print0)
   # popd >/dev/null
-} # end bootstrap_crw_theia_endpoint_runtime_binary
+} # end bootstrap_ds_theia_endpoint_runtime_binary
 
 for step in $STEPS; do
   echo 
@@ -701,7 +701,7 @@ set +x
 if [[ $STEPS ]]; then 
   echo; echo "Dockerfiles and resources generated - for tarballs, use collect-assets.sh script. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
   for step in $STEPS; do
-    output_dir=${step//_/-};output_dir=${output_dir/bootstrap-crw-/}
+    output_dir=${step//_/-};output_dir=${output_dir/bootstrap-devspaces-/}
     echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
   done
 
@@ -711,7 +711,7 @@ if [[ $STEPS ]]; then
     git update-index --refresh || true  # ignore timestamp updates
     if [[ $(git diff-index HEAD --) ]]; then # file changed
       git add .
-      echo "[INFO] Commit generated dockerfiles, lock files for these builds: ${STEPS//bootstrap_crw_/}"
+      echo "[INFO] Commit generated dockerfiles, lock files for these builds: ${STEPS//bootstrap_ds_/}"
       git commit -s -m "chore: generated dockerfiles, lock files"
       git pull || true
       git push || true
