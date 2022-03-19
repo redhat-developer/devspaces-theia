@@ -8,7 +8,7 @@
 # Contributors:
 #   Red Hat, Inc. - initial API and implementation
 
-FROM quay.io/eclipse/che-custom-nodejs-deasync:12.20.1 as custom-nodejs
+FROM quay.io/eclipse/che-custom-nodejs-deasync:14.19.0 as custom-nodejs
 FROM eclipse/che-theia:next as builder
 ARG NEXE_SHA1=0f0869b292f1d7b68ba6e170d628de68a10c009f
 
@@ -18,9 +18,9 @@ WORKDIR /home/theia
 ENV PATH=${HOME}/.yarn/bin:${PATH}
 
 # setup extra stuff
-ENV NEXE_FLAGS="--target 'alpine-x64-12' --temp /tmp/nexe-cache"
+ENV NEXE_FLAGS="--target 'alpine-x64-14' --temp /tmp/nexe-cache"
 
-COPY --from=custom-nodejs /alpine-x64-12 /tmp/nexe-cache/alpine-x64-12
+COPY --from=custom-nodejs /alpine-x64-14 /tmp/nexe-cache/alpine-x64-14
 
 USER root
 # setup nexe
@@ -33,7 +33,7 @@ RUN git checkout ${NEXE_SHA1} && npm install && npm run build
 WORKDIR /home/theia
 
 RUN /tmp/nexe/index.js -v && \
-    # Build remote binary with node runtime 12.x and che-theia node dependencies. nexe icludes to the binary only
+    # Build remote binary with node runtime 14.x and che-theia node dependencies. nexe icludes to the binary only
     # necessary dependencies.
     eval /tmp/nexe/index.js -i node_modules/@eclipse-che/theia-remote/lib/node/plugin-remote.js ${NEXE_FLAGS} -o ${HOME}/plugin-remote-endpoint
 
