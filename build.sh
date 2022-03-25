@@ -460,6 +460,8 @@ bootstrap_ds_theia() {
       echo "============================================================="
       exit 1
     fi
+    echo "Build [1/2] of ${TMP_THEIA_BUILDER_IMAGE} complete on $(uname -m). Begin pushing container to quay..."
+    ${BUILDER} push "${TMP_THEIA_BUILDER_IMAGE}" 
 
     # and create runtime image as well
     ${BUILDER} build -f .ubi8-dockerfile -t ${TMP_THEIA_RUNTIME_IMAGE} . ${DOCKERFLAGS} \
@@ -474,10 +476,8 @@ bootstrap_ds_theia() {
       exit 1 
     fi
 
-    echo "Build of ${TMP_THEIA_BUILDER_IMAGE} and ${TMP_THEIA_RUNTIME_IMAGE} complete on $(uname -m). Begin pushing containers to quay..."
-
+    echo "Build [2/2] of ${TMP_THEIA_RUNTIME_IMAGE} complete on $(uname -m). Begin pushing container to quay..."
     # CRW-1609 - @since 2.9 - push temp image to quay (need it for assets and downstream container builds)
-    ${BUILDER} push "${TMP_THEIA_BUILDER_IMAGE}" 
     ${BUILDER} push "${TMP_THEIA_RUNTIME_IMAGE}" 
     ${BUILDER} tag "${TMP_THEIA_RUNTIME_IMAGE}" eclipse/che-theia:next || true
   fi
