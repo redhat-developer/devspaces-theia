@@ -13,7 +13,7 @@ set -e
 set -u
 
 # defaults
-nodeVersion="12.22.5" # version of node to use for theia containers (aligned to version in ubi base images)
+nodeVersion="14.18.2" # version of node to use for theia containers (aligned to version in ubi base images)
 # see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
 # podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
 CRW_VERSION="" # must set this via cmdline with --cv, or use --cb to set MIDSTM_BRANCH
