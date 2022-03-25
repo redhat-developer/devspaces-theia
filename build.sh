@@ -590,7 +590,6 @@ bootstrap_ds_theia_endpoint_runtime_binary() {
     git checkout builder-from.dockerfile >/dev/null || true
   popd >/dev/null || exit 1
 
-  # TODO update this to 12.21.0 to match what's in UBI 8.4?
   # pull or build che-custom-nodejs-deasync, using definition in:
   # https://github.com/eclipse/che-theia/blob/master/dockerfiles/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile#L1
   if [[ ${DO_DOCKER_BUILDS} -eq 1 ]]; then 
@@ -602,7 +601,7 @@ bootstrap_ds_theia_endpoint_runtime_binary() {
       if [[ ! -d "${TMP_DIR}"/che-custom-nodejs-deasync ]]; then echo "[ERR""OR] could not clone https://github.com/che-dockerfiles/che-custom-nodejs-deasync.git !"; exit 1; fi
 
       cd "${TMP_DIR}"/che-custom-nodejs-deasync
-      nodeVersionDeAsync=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f2) # eg., 12.20.0
+      nodeVersionDeAsync=$(grep -E 'FROM .*che-custom-nodejs-deasync.*' "${DOCKERFILES_ROOT_DIR}"/theia-endpoint-runtime-binary/docker/ubi8/builder-from.dockerfile  | cut -d' ' -f2 | cut -d':' -f2) # eg., 14.18.2
       echo "$nodeVersionDeAsync" > VERSION
       # TODO https://issues.redhat.com/browse/CRW-1215 this should be a UBI or scratch based build, not alpine
       # see https://github.com/che-dockerfiles/che-custom-nodejs-deasync/blob/master/Dockerfile#L12
