@@ -199,7 +199,7 @@ if [[ ${DELETE_CACHE_IMAGES} -eq 1 ]]; then rmi_images 1; fi
 # method to look for failures in build logs; over time we can add more strings to grep
 findErrors() {
   # found a matching string
-  findErrors_Out="$(grep "error building at STEP" $1 || true)"
+  findErrors_Out="$(grep -E "gyp ERR|error Command failed with exit code|error building at STEP" $1 || true)"
   if [[ $findErrors_Out ]]; then
     return 1
   else 
