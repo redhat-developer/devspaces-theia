@@ -700,7 +700,7 @@ set +x
 if [[ $STEPS ]]; then 
   echo; echo "Dockerfiles and resources generated - for tarballs, use collect-assets.sh script. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
   for step in $STEPS; do
-    output_dir=${step//_/-};output_dir=${output_dir/bootstrap-devspaces-/}
+    output_dir=${step//_/-};output_dir=${output_dir/bootstrap-ds-/}
     echo " - ${BREW_DOCKERFILE_ROOT_DIR}/${output_dir}"
   done
 
