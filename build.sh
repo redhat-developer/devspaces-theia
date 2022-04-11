@@ -696,7 +696,7 @@ done
 
 rmi_images 0
 
-set +x
+set -x
 if [[ $STEPS ]]; then 
   echo; echo "Dockerfiles and resources generated - for tarballs, use collect-assets.sh script. See the following folder(s) for content to upload to pkgs.devel.redhat.com:"
   for step in $STEPS; do
