@@ -1,4 +1,4 @@
-# Copyright (c) 2019-22 Red Hat, Inc.
+# Copyright (c) 2019-21 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -45,7 +45,7 @@ RUN /tmp/nexe/index.js -v && \
 
 # Light image without node. We include remote binary to this image.
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.5-230.1645809059 as runtime
+FROM registry.access.redhat.com/ubi8-minimal:8.5-240.1648458092 as runtime
 USER 0
 RUN microdnf -y install yum python38 python38-pyyaml jq && python3 --version && \
     yum -y -q update && \

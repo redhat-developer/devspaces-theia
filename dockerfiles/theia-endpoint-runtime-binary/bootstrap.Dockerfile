@@ -1,4 +1,4 @@
-# Copyright (c) 2019-22 Red Hat, Inc.
+# Copyright (c) 2019-21 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,7 +8,7 @@
 # Contributors:
 #   Red Hat, Inc. - initial API and implementation
 
-FROM quay.io/eclipse/che-custom-nodejs-deasync:12.20.1 as custom-nodejs
+FROM quay.io/eclipse/che-custom-nodejs-deasync:14.19.0 as custom-nodejs
 FROM eclipse/che-theia:next as builder
 ARG NEXE_SHA1=0f0869b292f1d7b68ba6e170d628de68a10c009f
 
@@ -18,9 +18,9 @@ WORKDIR /home/theia
 ENV PATH=${HOME}/.yarn/bin:${PATH}
 
 # setup extra stuff
-ENV NEXE_FLAGS="--target 'alpine-x64-12' --temp /tmp/nexe-cache"
+ENV NEXE_FLAGS="--target 'alpine-x64-14' --temp /tmp/nexe-cache"
 
-COPY --from=custom-nodejs /alpine-x64-12 /tmp/nexe-cache/alpine-x64-12
+COPY --from=custom-nodejs /alpine-x64-14 /tmp/nexe-cache/alpine-x64-14
 
 USER root
 # setup nexe
@@ -39,7 +39,7 @@ RUN /tmp/nexe/index.js -v && \
 
 # Light image without node. We include remote binary to this image.
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.5-230.1645809059 as runtime
+FROM registry.access.redhat.com/ubi8-minimal:8.5-240.1648458092 as runtime
 USER 0
 RUN microdnf -y install yum python38 python38-pyyaml jq && python3 --version && \
     yum -y -q update && \
