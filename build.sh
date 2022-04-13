@@ -548,7 +548,7 @@ bootstrap_ds_theia() {
   sed_in_place -r \
   `# fix up theia loader patch inclusion (3 steps)` \
   -e "s#ADD branding/loader/loader.patch .+#COPY asset-branding.tar.gz /tmp/asset-branding.tar.gz#g" \
-  -e "s#ADD (branding/loader/CodeReady_icon_loader.svg .+)#RUN tar xvzf /tmp/asset-branding.tar.gz -C /tmp; cp /tmp/\\1#g" \
+  -e "s#ADD (branding/loader/loader.svg .+)#RUN tar xvzf /tmp/asset-branding.tar.gz -C /tmp; cp /tmp/\\1#g" \
   -e "s#(RUN cd .+/theia-source-code && git apply).+#\1 /tmp/branding/loader/loader.patch#g" \
   `# don't create tarballs` \
   -e "s#.+tar zcf.+##g" \

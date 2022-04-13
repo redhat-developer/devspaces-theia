@@ -40,7 +40,7 @@ RUN tar xzf /tmp/asset-theia-source-code.tar.gz -C ${HOME} && rm -f /tmp/asset-t
 
 #apply patch for Theia loader
 ADD branding/loader/loader.patch ${HOME}
-ADD branding/loader/CodeReady_icon_loader.svg ${HOME}/theia-source-code/packages/core/src/browser/icons/CodeReady_icon_loader.svg
+ADD branding/loader/loader.svg ${HOME}/theia-source-code/packages/core/src/browser/icons/loader.svg
 RUN cd ${HOME}/theia-source-code && git apply ../loader.patch
 # patch electron module by removing native keymap module (no need to have some X11 libraries)
 RUN line_to_delete=$(grep -n native-keymap ${HOME}/theia-source-code/dev-packages/electron/package.json | cut -d ":" -f 1) && \
