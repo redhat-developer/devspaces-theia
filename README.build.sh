@@ -1,4 +1,4 @@
-# to build CRW Theia
+# to build DS Theia
 
 # required build-args
 # GITHUB_TOKEN=YOUR_TOKEN_HERE
