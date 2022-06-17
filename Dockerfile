@@ -30,7 +30,7 @@ fi
 # see latest params in generated BUILD_PARAMS file
 ARG nodeVersion=12.22.5
 ARG yarnVersion=1.22.17
-ARG CRW_VERSION=2.15
+ARG DS_VERSION=2.15
 ARG SOURCE_BRANCH=main
 ARG THEIA_BRANCH=master
 ARG THEIA_GITHUB_REPO=eclipse-theia/theia
