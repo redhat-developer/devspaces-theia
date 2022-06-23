@@ -33,12 +33,12 @@ usage () {
 pkgs.devel devspaces-theia-dev checked out. Repeat for theia and theia-endpoint pkgs.devel repos.
 
 Usage:
-  $0 --cb MIDSTM_BRANCH --target /path/to/pkgs.devel/devspaces-theia-dev/ [options]
+  $0 -b MIDSTM_BRANCH --target /path/to/pkgs.devel/devspaces-theia-dev/ [options]
 
 Examples:
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-dev/      -d --rmi:tmp --ci --commit
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia/          -t --rmi:tmp --ci --commit
-  $0 --cb ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-endpoint/ -e --rmi:tmp --ci --commit
+  $0 -b ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-dev/      -d --rmi:tmp --ci --commit
+  $0 -b ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia/          -t --rmi:tmp --ci --commit
+  $0 -b ${usage_branch} --target /path/to/pkgs.devel/devspaces-theia-endpoint/ -e --rmi:tmp --ci --commit
 
 Directory flags:
   --target     | instead of writing assets into current dir $(pwd)/, target a different place
@@ -52,8 +52,8 @@ Architecture flags:
   --platforms \"${PLATFORMS}\" | architectures for which to collect assets
 
 Optional flags:
-  --cb             | DS_BRANCH from which to compute version of DS to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
-  --cv             | rather than pull from DS_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
+  -b             | DS_BRANCH from which to compute version of DS to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
+  -v             | rather than pull from DS_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
                    | just set DS_VERSION; default: ${DS_VERSION}
   --nv             | node version to use; default: ${nodeVersion}
   --pr             | if building based on a GH pull request, use 'pr' in tag names instead of 'tmp'
@@ -76,11 +76,11 @@ for key in "$@"; do
   case $key in 
       '-d'|'--theia-dev') ARCHSTEPS="collect_arch_assets_ds_theia_dev"; NOARCHSTEPS="collect_noarch_assets_ds_theia_dev"; shift 1;;
       '-t'|'--theia') ARCHSTEPS="collect_arch_assets_ds_theia"; NOARCHSTEPS="collect_noarch_assets_ds_theia"; shift 1;;
-      '-e'|'-b'|'--theia-endpoint'|'--theia-endpoint-runtime-binary') ARCHSTEPS="collect_arch_assets_ds_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_ds_theia_endpoint_runtime_binary"; shift 1;;
+      '-e'|'--theia-endpoint'|'--theia-endpoint-runtime-binary') ARCHSTEPS="collect_arch_assets_ds_theia_endpoint_runtime_binary"; NOARCHSTEPS="collect_noarch_assets_ds_theia_endpoint_runtime_binary"; shift 1;;
+      '-b')  MIDSTM_BRANCH="$2"; shift 2;;
+      '-v')  DS_VERSION="$2"; shift 2;;
       '--target') TARGETDIR="$2"; shift 2;;
       '--platforms') PLATFORMS="$2"; shift 2;;
-      '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
-      '--cv')  DS_VERSION="$2"; shift 2;;
       '--nv') nodeVersion="$2"; shift 2;;
       '--pr') BUILD_TYPE="pr"; shift 1;;
       '--gh') BUILD_TYPE="gh"; shift 1;;
@@ -95,7 +95,7 @@ if [[ ! ${DS_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
   DS_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${DS_VERSION} ]]; then 
-  echo "[ERROR] Must set either --cb devspaces-3.y-rhel-8 or --cv 3.y to define the version of DS Theia for which to collect assets."; echo
+  echo "[ERROR] Must set either -b devspaces-3.y-rhel-8 or -v 3.y to define the version of DS Theia for which to collect assets."; echo
   usage
 fi
 echo "[INFO] Using MIDSTM_BRANCH = ${MIDSTM_BRANCH} and DS_VERSION = ${DS_VERSION}"

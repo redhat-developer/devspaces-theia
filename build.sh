@@ -16,8 +16,8 @@ set -u
 nodeVersion="14.18.2" # version of node to use for theia containers (aligned to version in ubi base images)
 # see https://catalog.redhat.com/software/containers/ubi8/nodejs-12/5d3fff015a13461f5fb8635a?container-tabs=packages or run
 # podman run -it --rm --entrypoint /bin/bash registry.redhat.io/ubi8/nodejs-12 -c "node -v"
-DS_VERSION="" # must set this via cmdline with --cv, or use --cb to set MIDSTM_BRANCH
-MIDSTM_BRANCH="" # must set this via cmdline with --cb, or use --cv to set DS_VERSION
+DS_VERSION="" # must set this via cmdline with -v, or use -b to set MIDSTM_BRANCH
+MIDSTM_BRANCH="" # must set this via cmdline with -b, or use -v to set DS_VERSION
 SOURCE_BRANCH="master"
 THEIA_BRANCH="master"
 THEIA_GITHUB_REPO="eclipse-theia/theia" # or redhat-developer/eclipse-theia so we can build from a tag instead of a random commit SHA
@@ -43,8 +43,8 @@ See https://github.com/settings/tokens for more information.
 Examples:
   $(if [[ -r ./BUILD_COMMAND ]]; then cat ./BUILD_COMMAND; fi)
 
-  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cb devspaces-3.y-rhel-8
-  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp --cv 3.y
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp -b devspaces-3.y-rhel-8
+  $0 --ctb ${SOURCE_BRANCH} --all --no-cache --no-tests --rmi:tmp -v 3.y
 
 Options:
   $0 -d      | build theia-dev
@@ -56,8 +56,8 @@ Note that steps are run in the order specified, so always start with -d if neede
 
 Additional flags:
   --ctb      | CHE_THEIA_BRANCH from which to sync into DS; default: ${SOURCE_BRANCH}
-  --cb       | DS_BRANCH from which to compute version of DS to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
-  --cv       | rather than pull from DS_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
+  -b         | DS_BRANCH from which to compute version of DS to put in Dockerfiles, eg., devspaces-3.y-rhel-8 or ${MIDSTM_BRANCH}
+  -v         | rather than pull from DS_BRANCH version of redhat-developer/devspaces/dependencies/VERSION file, 
              | just set DS_VERSION; default: ${DS_VERSION}
   --tb       | container build arg THEIA_BRANCH from which to get Eclipse Theia sources, default: ${THEIA_BRANCH} [never change this]
   --tgr      | container build arg THEIA_GITHUB_REPO from which to get Eclipse Theia sources, default: ${THEIA_GITHUB_REPO}
@@ -109,8 +109,8 @@ for key in "$@"; do
       '--tb') THEIA_BRANCH="$2"; shift 2;;
       '--tgr') THEIA_GITHUB_REPO="$2"; shift 2;;
       '--tcs') THEIA_COMMIT_SHA="$2"; shift 2;;
-      '--cb')  MIDSTM_BRANCH="$2"; shift 2;;
-      '--cv')  DS_VERSION="$2"; shift 2;;
+      '-b')  MIDSTM_BRANCH="$2"; shift 2;;
+      '-v')  DS_VERSION="$2"; shift 2;;
       '-d') STEPS="${STEPS} bootstrap_ds_theia_dev"; shift 1;;
       '-t') STEPS="${STEPS} bootstrap_ds_theia"; shift 1;;
       '-e'|'-b') STEPS="${STEPS} bootstrap_ds_theia_endpoint_runtime_binary"; shift 1;;
@@ -135,7 +135,7 @@ if [[ ! ${DS_VERSION} ]] && [[ ${MIDSTM_BRANCH} ]]; then
   DS_VERSION=$(curl -sSLo- https://raw.githubusercontent.com/redhat-developer/devspaces/${MIDSTM_BRANCH}/dependencies/VERSION)
 fi
 if [[ ! ${DS_VERSION} ]]; then 
-  echo "Error: must set either --cb devspaces-3.y-rhel-8 or --cv 3.y to define the version of DS Theia to build."
+  echo "Error: must set either -b devspaces-3.y-rhel-8 or -v 3.y to define the version of DS Theia to build."
   usage
 fi
 

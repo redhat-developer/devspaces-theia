@@ -67,7 +67,7 @@ OLD_SHA="$(git rev-parse --short=4 HEAD)"
 if [[ ${PULL_ASSETS} -eq 1 ]]; then 
   # collect assets. NOTE: target folder must end in theia-dev/, theia/ or theia-endpoint/ to auto-compute what to collect; 
   # otherwise an override flag is needed: -d, --theia-dev, -t, --theia, -e, --theia-endpoint
-  ./build/scripts/collect-assets.sh --cb ${MIDSTM_BRANCH} --target $(pwd)/ --rmi:tmp --ci --commit
+  ./build/scripts/collect-assets.sh -b ${MIDSTM_BRANCH} --target $(pwd)/ --rmi:tmp --ci --commit
 fi
 NEW_SHA="$(git rev-parse --short=4 HEAD)"
 

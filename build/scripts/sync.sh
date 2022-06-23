@@ -29,6 +29,8 @@ if [[ $# -lt 4 ]]; then usage; fi
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
+    '-v') exit 0; shift 1;; #in case something tries to pass in CSV version or branch
+    '-b') exit 0; shift 1;; #
     # paths to use for input and ouput
     '-s') SOURCEDIR="$2"; SOURCEDIR="${SOURCEDIR%/}"; shift 2;;
     '-t') TARGETDIR="$2"; TARGETDIR="${TARGETDIR%/}"; shift 2;;
