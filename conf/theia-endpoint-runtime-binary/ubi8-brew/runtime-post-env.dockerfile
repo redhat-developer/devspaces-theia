@@ -1,8 +1,8 @@
 # copy previously cached yq dependency wheels for offline install
 COPY *.whl /tmp
 
-ENV SUMMARY="Red Hat OpenShift Dev Spaces - theia-endpoint container" \
-    DESCRIPTION="Red Hat OpenShift Dev Spaces - theia-endpoint container" \
+ENV SUMMARY="Red Hat OpenShift Dev Spaces with Eclipse Theia IDE (endpoint)" \
+    DESCRIPTION="Red Hat OpenShift Dev Spaces with Eclipse Theia IDE (endpoint)" \
     PRODNAME="devspaces" \
     COMPNAME="theia-endpoint-rhel8" 
 
