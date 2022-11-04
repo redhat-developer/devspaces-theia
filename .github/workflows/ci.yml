@@ -19,12 +19,14 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: docker/login-action@v1
-      name: "quay.io login"
+
+    - name: Login to quay.io
+      uses: docker/login-action@v1
       with:
         registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_PASSWORD }}
+        # for pushing to quay.io/devspaces/
+        username: ${{ secrets.DS_QUAY_USERNAME }}
+        password: ${{ secrets.DS_QUAY_PASSWORD }}
     - uses: actions/checkout@v2
       name: Fetch Dev Spaces Theia source code
     - uses: actions/setup-node@v1
