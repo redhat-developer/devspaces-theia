@@ -16,7 +16,7 @@
 pythonVersion="3.10.8"
 
 # note that the GHA and upstream builds use node 14, but THIS script still uses node 12 (*shrug*)
-nodeVersion="12.22.5" # version of node to use for theia containers (aligned to version in ubi base images)
+nodeVersion="14.20.0" # version of node to use for theia containers (aligned to version in ubi base images)
 PLATFORMS="s390x, ppc64le, x86_64"
 BUILD_TYPE="tmp" # use "tmp" prefix for temporary build tags in Quay, but if we're building based on a PR, set "pr" prefix
 
