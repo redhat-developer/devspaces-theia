@@ -166,7 +166,7 @@ RUN if [ "$UNPACK_CHE_THEIA_PLUGINS" = "true" ]; then cd plugins && ./unpack_che
 
 # Use node image
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-92.1666660398 as build-result
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-83 as build-result
 USER root
 
 COPY --from=builder /home/theia-dev/theia-source-code/production /che-theia-build
@@ -221,7 +221,7 @@ LABEL summary="$SUMMARY" \
       io.openshift.tags="$PRODNAME,$COMPNAME" \
       com.redhat.component="$PRODNAME-$COMPNAME-container" \
       name="$PRODNAME/$COMPNAME" \
-      version="3.3" \
+      version="3.4" \
       license="EPLv2" \
       maintainer="Nick Boldt <nboldt@redhat.com>" \
       io.openshift.expose-services="" \
