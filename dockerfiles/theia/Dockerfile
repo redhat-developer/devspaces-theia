@@ -10,7 +10,7 @@
 ###
 # Builder Image
 #
-FROM registry-proxy.engineering.redhat.com/rh-osbs/devspaces-theia-dev-rhel8:3.3 as builder
+FROM registry-proxy.engineering.redhat.com/rh-osbs/devspaces-theia-dev-rhel8:3.4 as builder
 
 WORKDIR ${HOME}
 
@@ -221,7 +221,7 @@ LABEL summary="$SUMMARY" \
       io.openshift.tags="$PRODNAME,$COMPNAME" \
       com.redhat.component="$PRODNAME-$COMPNAME-container" \
       name="$PRODNAME/$COMPNAME" \
-      version="3.3" \
+      version="3.4" \
       license="EPLv2" \
       maintainer="Nick Boldt <nboldt@redhat.com>" \
       io.openshift.expose-services="" \
