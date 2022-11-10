@@ -119,7 +119,7 @@ RUN if [ "$UNPACK_CHE_THEIA_PLUGINS" = "true" ]; then cd plugins && ./unpack_che
 
 # Use node image
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-83 as build-result
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-92.1666660398 as build-result
 USER root
 
 COPY --from=builder /home/theia-dev/theia-source-code/production /che-theia-build
@@ -138,7 +138,7 @@ RUN mv /che-theia-build/plugins /default-theia-plugins
 
 # Use node image
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-83 as runtime
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-92.1666660398 as runtime
 
 ENV USE_LOCAL_GIT=true \
     HOME=/home/theia \
