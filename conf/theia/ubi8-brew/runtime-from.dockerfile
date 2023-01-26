@@ -1,5 +1,5 @@
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-93.1669834622 as runtime
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-95 as runtime
 USER 0
 RUN yum -y -q update && \
     yum -y -q clean all && rm -rf /var/cache/yum && \
