@@ -1,3 +1,7 @@
+## This repo is deprecated. As of Dev Spaces 3.6, Theia is no longer supported and has been removed.
+
+---
+
 Links marked with this icon :door: are _internal to Red Hat_. This includes Jenkins servers, job configs in gitlab, and container sources in dist-git. 
 
 ## What's inside?
